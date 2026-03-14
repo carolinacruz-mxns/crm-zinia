@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Zínia</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F5F1;
+  --surface: #FFFFFF;
+  --surface2: #F0EEE9;
+  --border: #E3E0D8;
+  --border2: #C8C4BA;
+  --text: #1C1A16;
+  --text2: #5C5A52;
+  --text3: #9C9A90;
+  --accent: #1C1A16;
+  --green: #166534; --green-bg: #DCFCE7; --green-border: #86EFAC;
+  --blue: #1447A0; --blue-bg: #DBEAFE; --blue-border: #93C5FD;
+  --amber: #92400E; --amber-bg: #FEF3C7; --amber-border: #FCD34D;
+  --rose: #9D174D; --rose-bg: #FCE7F3; --rose-border: #F9A8D4;
+  --gray: #374151; --gray-bg: #F3F4F6; --gray-border: #D1D5DB;
+  --teal: #115E59; --teal-bg: #CCFBF1; --teal-border: #5EEAD4;
+  --red: #991B1B; --red-bg: #FEE2E2; --red-border: #FCA5A5;
+  --purple: #5B21B6; --purple-bg: #EDE9FE; --purple-border: #C4B5FD;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --r: 10px; --r-sm: 6px; --r-lg: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
+button, input, select, textarea { font-family: var(--font); }
+
+/* ─── NAV ─── */
+.nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 52px; position: sticky; top: 0; z-index: 100;
+  gap: 12px;
+}
+.nav-brand { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.nav-brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text); }
+.nav-tabs { display: flex; gap: 2px; }
+.tab {
+  font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: var(--r-sm);
+  border: none; background: none; cursor: pointer; color: var(--text2);
+  transition: all 0.15s;
+}
+.tab:hover { background: var(--surface2); color: var(--text); }
+.tab.active { background: var(--text); color: #fff; }
+.nav-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.search {
+  font-size: 13px; padding: 6px 12px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); background: var(--bg); color: var(--text);
+  width: 200px; outline: none; transition: all 0.15s;
+}
+.search:focus { border-color: var(--border2); background: var(--surface); width: 240px; }
+.btn-primary {
+  font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: var(--r-sm);
+  background: var(--text); color: #fff; border: none; cursor: pointer;
+  transition: opacity 0.15s; white-space: nowrap;
+}
+.btn-primary:hover { opacity: 0.82; }
+
+/* ─── VIEWS ─── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── KANBAN ─── */
+.board {
+  display: flex; gap: 0; overflow-x: auto; padding: 16px 12px 32px;
+  min-height: calc(100vh - 52px); align-items: flex-start;
+}
+.board::-webkit-scrollbar { height: 5px; }
+.board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+.col { min-width: 228px; max-width: 228px; margin: 0 6px; }
+.col-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
+.col-label { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.col-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.col-count { font-family: var(--mono); font-size: 11px; background: var(--surface); border: 1px solid var(--border); color: var(--text3); border-radius: 20px; padding: 1px 8px; }
+.col-body { display: flex; flex-direction: column; gap: 7px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 12px 13px; cursor: pointer; transition: border-color 0.13s, transform 0.1s;
+  position: relative; overflow: hidden;
+}
+.card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:0; }
+.card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 4px; }
+.card-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.temp-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.card-company { font-size: 12px; color: var(--text3); margin-bottom: 7px; }
+.card-info { font-size: 11px; color: var(--text2); line-height: 1.8; }
+.card-value { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); margin-top: 7px; }
+.card-footer { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+.chip { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+.chip-seg { background: var(--purple-bg); color: var(--purple); }
+.chip-serv { background: var(--blue-bg); color: var(--blue); }
+.chip-followup { background: var(--amber-bg); color: var(--amber); font-family: var(--mono); }
+.chip-overdue { background: var(--red-bg); color: var(--red); }
+.card-empty { font-size: 12px; color: var(--text3); padding: 8px 4px; text-align: center; }
+
+/* ─── FOLLOWUP VIEW ─── */
+.followup-wrap { padding: 20px; max-width: 1100px; margin: 0 auto; }
+.section-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-title .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.fu-table { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 24px; border-collapse: collapse; }
+.fu-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); text-align: left; }
+.fu-table td { font-size: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; }
+.fu-table tr:last-child td { border-bottom: none; }
+.fu-table tr:hover td { background: var(--surface2); cursor: pointer; }
+.fu-table td .name { font-size: 13px; font-weight: 600; color: var(--text); }
+.fu-table td .company { font-size: 11px; color: var(--text3); }
+.dias-badge { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+
+/* ─── DASHBOARD ─── */
+.dash-wrap { padding: 20px; max-width: 1100px; margin: 0 auto; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 16px 18px;
+}
+.kpi-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 600; font-family: var(--mono); letter-spacing: -0.02em; color: var(--text); }
+.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; }
+.dash-card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 14px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 12px; }
+.bar-label { width: 130px; flex-shrink: 0; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 7px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 28px; text-align: right; }
+.funnel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.funnel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.funnel-label { flex: 1; font-size: 12px; color: var(--text2); }
+.funnel-count { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); min-width: 28px; text-align: right; }
+.funnel-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 80px; text-align: right; }
+
+/* ─── MODAL ─── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(20,18,14,0.38);
+  z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal {
+  background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--border2);
+  width: 560px; max-width: 100%; max-height: 92vh; overflow-y: auto;
+  padding: 24px 26px; animation: up 0.18s ease;
+}
+@keyframes up { from { transform:translateY(10px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.modal-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.btn-close { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text3); padding: 0 4px; border-radius: 4px; line-height: 1; }
+.btn-close:hover { background: var(--surface2); color: var(--text); }
+.modal-section { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field.full { grid-column: 1 / -1; }
+.field.third { grid-column: span 1; }
+label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); }
+.field input, .field select, .field textarea {
+  font-size: 13px; padding: 8px 11px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); background: var(--bg); color: var(--text); outline: none;
+  transition: border-color 0.13s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--border2); background: var(--surface); }
+.field textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+.modal-footer { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+.btn-del { font-size: 13px; padding: 8px 14px; border-radius: var(--r-sm); background: none; border: 1px solid var(--border); color: var(--text3); cursor: pointer; transition: all 0.13s; margin-right: auto; }
+.btn-del:hover { border-color: var(--red-border); color: var(--red); }
+.btn-cancel { font-size: 13px; padding: 8px 16px; border-radius: var(--r-sm); background: none; border: 1px solid var(--border); color: var(--text2); cursor: pointer; }
+.btn-cancel:hover { background: var(--surface2); }
+.btn-save { font-size: 13px; font-weight: 600; padding: 8px 22px; border-radius: var(--r-sm); background: var(--text); color: #fff; border: none; cursor: pointer; transition: opacity 0.13s; }
+.btn-save:hover { opacity: 0.82; }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  background: var(--text); color: #fff; font-size: 13px; font-weight: 500;
+  padding: 10px 18px; border-radius: 8px; pointer-events: none;
+  animation: fadeIn .2s ease, fadeOut .3s ease 1.8s forwards;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeOut { to { opacity:0; transform:translateY(6px); } }
+
+/* ─── FILTERS ─── */
+.filters { display: flex; gap: 8px; padding: 0 12px 12px; flex-wrap: wrap; align-items: center; }
+.filter-select {
+  font-size: 12px; padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); background: var(--surface); color: var(--text2);
+  cursor: pointer; outline: none;
+}
+.filter-select:focus { border-color: var(--border2); }
+
+/* ─── LIST VIEW ─── */
+.list-wrap { padding: 0 16px 32px; }
+.list-toolbar { display: flex; gap: 8px; padding: 14px 0 10px; flex-wrap: wrap; align-items: center; }
+.list-count { font-size: 12px; color: var(--text3); margin-left: auto; font-family: var(--mono); }
+.list-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; overflow-x: auto; }
+.list-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.list-table th {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text3); padding: 10px 13px; background: var(--surface2);
+  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
+  cursor: pointer; user-select: none; position: sticky; top: 0;
+}
+.list-table th:hover { color: var(--text2); }
+.list-table th .sort-icon { margin-left: 4px; opacity: 0.5; font-size: 10px; }
+.list-table th.sorted .sort-icon { opacity: 1; color: var(--text); }
+.list-table td { font-size: 12px; padding: 9px 13px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; white-space: nowrap; }
+.list-table tr:last-child td { border-bottom: none; }
+.list-table tr:hover td { background: var(--surface2); cursor: pointer; }
+.list-table td.td-main { white-space: normal; min-width: 140px; }
+.list-table td .lead-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.list-table td .lead-contact { font-size: 11px; color: var(--text3); }
+.list-empty { padding: 40px; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* ─── SETTINGS ─── */
+.settings-wrap { padding: 24px; max-width: 680px; margin: 0 auto; }
+.settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px 22px; margin-bottom: 20px; }
+.settings-section-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.settings-section-desc { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 32px; }
+.tag-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; padding: 5px 12px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+}
+.tag-item button { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 15px; line-height: 1; padding: 0; display: flex; align-items: center; }
+.tag-item button:hover { color: var(--red); }
+.tag-add-row { display: flex; gap: 8px; }
+.tag-input { font-size: 13px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg); color: var(--text); outline: none; flex: 1; }
+.tag-input:focus { border-color: var(--border2); background: var(--surface); }
+.btn-add { font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: var(--r-sm); background: var(--text); color: #fff; border: none; cursor: pointer; white-space: nowrap; }
+.btn-add:hover { opacity: 0.82; }
+
+/* ─── METAS ─── */
+.metas-wrap { padding: 20px; max-width: 1000px; margin: 0 auto; }
+.metas-period-toggle { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; width: fit-content; }
+.period-btn { font-size: 13px; font-weight: 500; padding: 5px 18px; border-radius: 5px; border: none; background: none; cursor: pointer; color: var(--text2); transition: all 0.13s; }
+.period-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.vendedor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.vendedor-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px 22px; }
+.vendedor-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.vendedor-sub { font-size: 12px; color: var(--text3); margin-bottom: 18px; }
+.meta-row { margin-bottom: 16px; }
+.meta-row-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.meta-row-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
+.meta-row-nums { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.meta-row-nums b { color: var(--text); font-weight: 600; }
+.progress-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.meta-pct { font-size: 11px; color: var(--text3); margin-top: 4px; text-align: right; font-family: var(--mono); }
+.meta-pct.hit { color: var(--green); font-weight: 600; }
+.meta-empty { padding: 48px; text-align: center; color: var(--text3); font-size: 13px; }
+.meta-empty-icon { font-size: 28px; margin-bottom: 10px; }
+
+/* metas in config */
+.meta-cfg-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.meta-cfg-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); padding: 8px 10px; background: var(--surface2); border-bottom: 1px solid var(--border); text-align: left; }
+.meta-cfg-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text2); vertical-align: middle; }
+.meta-cfg-table tr:last-child td { border-bottom: none; }
+.meta-cfg-input { font-family: var(--mono); font-size: 13px; padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg); color: var(--text); width: 130px; outline: none; text-align: right; }
+.meta-cfg-input:focus { border-color: var(--border2); background: var(--surface); }
+.btn-save-meta { font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: var(--r-sm); background: var(--text); color: #fff; border: none; cursor: pointer; }
+.btn-save-meta:hover { opacity: 0.82; }
+
+@media (max-width: 640px) {
+  .nav-tabs { display: none; }
+  .board { padding: 10px 4px; }
+  .col { min-width: 200px; max-width: 200px; margin: 0 4px; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .search { width: 130px; }
+}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-brand"><div class="nav-brand-dot"></div>CRM Zínia</div>
+  <div class="nav-tabs">
+    <button class="tab active" onclick="switchView('kanban',this)">Kanban</button>
+    <button class="tab" onclick="switchView('lista',this)">Lista</button>
+    <button class="tab" onclick="switchView('followup',this)">Follow-up</button>
+    <button class="tab" onclick="switchView('metas',this)">Metas</button>
+    <button class="tab" onclick="switchView('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchView('config',this)">⚙ Config</button>
+  </div>
+  <div class="nav-right">
+    <span id="sync-status" style="font-size:11px;color:var(--text3);white-space:nowrap">🔄 Conectando...</span>
+    <input class="search" type="text" id="search" placeholder="Buscar lead..." oninput="renderAll()">
+    <button class="btn-primary" onclick="openModal(null)">+ Novo lead</button>
+  </div>
+</div>
+
+<!-- KANBAN -->
+<div class="view active" id="view-kanban">
+  <div class="filters">
+    <select class="filter-select" id="fil-resp" onchange="renderAll()"><option value="">Todos responsáveis</option></select>
+    <select class="filter-select" id="fil-seg" onchange="renderAll()"><option value="">Todos segmentos</option></select>
+    <select class="filter-select" id="fil-temp" onchange="renderAll()"><option value="">Toda temperatura</option></select>
+    <select class="filter-select" id="fil-serv" onchange="renderAll()"><option value="">Todos serviços</option></select>
+  </div>
+  <div class="board" id="board"></div>
+</div>
+
+<!-- LISTA -->
+<div class="view" id="view-lista">
+  <div class="list-wrap">
+    <div class="list-toolbar">
+      <select class="filter-select" id="lil-stage" onchange="renderAll()"><option value="">Todas etapas</option></select>
+      <select class="filter-select" id="lil-seg" onchange="renderAll()"><option value="">Todos segmentos</option></select>
+      <select class="filter-select" id="lil-temp" onchange="renderAll()"><option value="">Toda temperatura</option></select>
+      <select class="filter-select" id="lil-serv" onchange="renderAll()"><option value="">Todos serviços</option></select>
+      <span class="list-count" id="list-count"></span>
+    </div>
+    <div class="list-table-wrap">
+      <table class="list-table" id="list-table">
+        <thead id="list-thead"></thead>
+        <tbody id="list-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- METAS -->
+<div class="view" id="view-metas">
+  <div class="metas-wrap">
+    <div class="metas-period-toggle">
+      <button class="period-btn active" id="period-dia" onclick="setMetaPeriod('dia',this)">Hoje</button>
+      <button class="period-btn" id="period-mes" onclick="setMetaPeriod('mes',this)">Este mês</button>
+    </div>
+    <div class="vendedor-grid" id="vendedor-grid"></div>
+  </div>
+</div>
+
+<!-- FOLLOW-UP -->
+<div class="view" id="view-followup">
+  <div class="followup-wrap" id="followup-content"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="view" id="view-dashboard">
+  <div class="dash-wrap" id="dash-content"></div>
+</div>
+
+<div id="modal-root"></div>
+
+<!-- CONFIG -->
+<div class="view" id="view-config">
+  <div class="settings-wrap">
+    <div class="settings-section">
+      <div class="settings-section-title">Responsáveis</div>
+      <div class="settings-section-desc">Gerencie quem pode ser atribuído a um lead. Esses nomes aparecem como opções no formulário.</div>
+      <div class="tag-list" id="cfg-resp-list"></div>
+      <div class="tag-add-row">
+        <input class="tag-input" id="cfg-resp-input" placeholder="Nome do responsável..." onkeydown="if(event.key==='Enter')addCfgItem('responsaveis','cfg-resp-input','cfg-resp-list')">
+        <button class="btn-add" onclick="addCfgItem('responsaveis','cfg-resp-input','cfg-resp-list')">+ Adicionar</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Serviços oferecidos</div>
+      <div class="settings-section-desc">Lista de serviços disponíveis para seleção no formulário de lead.</div>
+      <div class="tag-list" id="cfg-serv-list"></div>
+      <div class="tag-add-row">
+        <input class="tag-input" id="cfg-serv-input" placeholder="Nome do serviço..." onkeydown="if(event.key==='Enter')addCfgItem('servicos','cfg-serv-input','cfg-serv-list')">
+        <button class="btn-add" onclick="addCfgItem('servicos','cfg-serv-input','cfg-serv-list')">+ Adicionar</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Segmentos</div>
+      <div class="settings-section-desc">Segmentos de mercado dos seus clientes.</div>
+      <div class="tag-list" id="cfg-seg-list"></div>
+      <div class="tag-add-row">
+        <input class="tag-input" id="cfg-seg-input" placeholder="Nome do segmento..." onkeydown="if(event.key==='Enter')addCfgItem('segmentos','cfg-seg-input','cfg-seg-list')">
+        <button class="btn-add" onclick="addCfgItem('segmentos','cfg-seg-input','cfg-seg-list')">+ Adicionar</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Metas por vendedor</div>
+      <div class="settings-section-desc">Defina as metas diária e mensal de cada responsável. Os valores são em R$ de negócios fechados.</div>
+      <div id="cfg-metas-table"></div>
+      <div style="margin-top:12px">
+        <button class="btn-save-meta" onclick="saveMetasCfg()">Salvar metas</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const STAGES = [
+  { id:'prospeccao',    label:'Prospecção',         color:'#9A9890' },
+  { id:'qualificacao',  label:'Qualificação',        color:'#1447A0' },
+  { id:'elaboracao',    label:'Proposta em elaboração', color:'#BA7517' },
+  { id:'proposta',      label:'Proposta enviada',    color:'#7C3AED' },
+  { id:'negociacao',    label:'Negociação',          color:'#166534' },
+  { id:'fechado',       label:'Fechado ✓',           color:'#115E59' },
+  { id:'perdido',       label:'Perdido',             color:'#9D174D' },
+];
+
+const TEMP_OPTS = ['Frio (empresa ainda exploratória, sem demanda clara)', 'Morno (conversa iniciada, possível necessidade identificada)', 'Quente (pediu orçamento, negociação iniciada)'];
+const ACAO_OPTS = ['WhatsApp', 'Ligação', 'E-mail', 'Reunião presencial', 'Reunião online', 'Enviar proposta', 'Aguardar retorno'];
+const ORIGEM_OPTS = ['Indicação de cliente', 'Cliente atual', 'Redes sociais', 'Site', 'Prospecção ativa', 'Evento / feira', 'Parceiro'];
+const CARGO_OPTS = ['Responsável Técnico', 'Administrativo', 'Proprietário', 'Diretor', 'Gerente', 'Comprador', 'Outro'];
+
+// ─── GOOGLE SHEETS CONFIG ───
+// Cole aqui a URL do seu Apps Script após implantar
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxWSLgI9Y-YI-56h7Wm-7iUvxJvhX9uBOfFAm843TrbYOYs4R4twuuWPCse-Z4ygyjJ6w/exec';
+
+let isSyncing = false;
+
+function showSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--text3)';
+}
+
+async function sheetsGet(action) {
+  const r = await fetch(`${SHEETS_URL}?action=${action}`);
+  if (!r.ok) throw new Error('Erro HTTP ' + r.status);
+  const j = await r.json();
+  if (j.status !== 'ok') throw new Error(j.message);
+  return j.data;
+}
+
+async function sheetsPost(action, data) {
+  const r = await fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, data }),
+  });
+  if (!r.ok) throw new Error('Erro HTTP ' + r.status);
+  const j = await r.json();
+  if (j.status !== 'ok') throw new Error(j.message);
+  return j.data;
+}
+
+async function initCloud() {
+  if (SHEETS_URL === 'COLE_A_URL_AQUI') {
+    showSyncStatus('⚠ URL não configurada', 'var(--amber)');
+    leads = loadLocal();
+    config = loadConfigLocal();
+    renderAll();
+    return;
+  }
+  showSyncStatus('🔄 Conectando...', 'var(--amber)');
+  try {
+    const [ld, cd] = await Promise.all([sheetsGet('getLeads'), sheetsGet('getConfig')]);
+    leads = ld.leads || [];
+    nextId = ld.nextId || (leads.reduce((m,l) => Math.max(m,l.id), 0) + 1);
+    config = { ...defaultConfig(), ...cd, metas: cd.metas || {} };
+    showSyncStatus('✓ Sincronizado', 'var(--green)');
+    renderAll();
+    setInterval(autoRefresh, 30000);
+  } catch(e) {
+    showSyncStatus('⚠ Offline — dados locais', 'var(--amber)');
+    leads = loadLocal();
+    config = loadConfigLocal();
+    renderAll();
+  }
+}
+
+async function autoRefresh() {
+  if (isSyncing || SHEETS_URL === 'COLE_A_URL_AQUI') return;
+  try {
+    const ld = await sheetsGet('getLeads');
+    leads = ld.leads || [];
+    nextId = ld.nextId || (leads.reduce((m,l) => Math.max(m,l.id), 0) + 1);
+    showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}), 'var(--green)');
+    renderAll();
+  } catch(e) {}
+}
+
+async function save() {
+  isSyncing = true;
+  showSyncStatus('🔄 Salvando...', 'var(--amber)');
+  localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
+  if (SHEETS_URL === 'COLE_A_URL_AQUI') { isSyncing = false; return; }
+  try {
+    await sheetsPost('saveLeads', { leads, nextId });
+    showSyncStatus('✓ Salvo ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}), 'var(--green)');
+  } catch(e) {
+    showSyncStatus('⚠ Salvo localmente (sem conexão)', 'var(--amber)');
+  }
+  isSyncing = false;
+}
+
+async function saveConfig() {
+  localStorage.setItem('crm_zinia_config', JSON.stringify(config));
+  if (SHEETS_URL === 'COLE_A_URL_AQUI') return;
+  try {
+    await sheetsPost('saveConfig', config);
+    showSyncStatus('✓ Config salva', 'var(--green)');
+  } catch(e) {
+    showSyncStatus('⚠ Config salva localmente', 'var(--amber)');
+  }
+}
+
+// Local fallbacks
+function loadLocal() {
+  try { const s = localStorage.getItem('crm_zinia_v2'); return s ? JSON.parse(s) : sampleLeads(); }
+  catch(e) { return sampleLeads(); }
+}
+function loadConfigLocal() {
+  try {
+    const s = localStorage.getItem('crm_zinia_config');
+    const d = defaultConfig();
+    if (!s) return d;
+    const p = JSON.parse(s);
+    return { ...d, ...p, metas: p.metas || {} };
+  } catch(e) { return defaultConfig(); }
+}
+function defaultConfig() {
+  return {
+    responsaveis: ['Ana Luiza Queiroz'],
+    servicos: ['Microbiologia de alimentos', 'Água e potabilidade'],
+    segmentos: ['Indústria de alimentos', 'Mel', 'Agropecuária', 'Laticínios', 'Bebidas', 'Frigorífico'],
+    metas: {},
+  };
+}
+
+function sampleLeads() {
+  return [
+    { id:1, data_lead:'2026-03-13', id_lead:'001', empresa:'Alhos Ribeiro', cidade:'São José', estado:'SC', cnpj:'09.219.850/0001-50', segmento:'Indústria de alimentos', origem:'Indicação de cliente', contato_nome:'Aline Araújo', contato_cargo:'Responsável Técnico', whatsapp:'48 98837-1614', email:'alineamarantea4@gmail.com', responsavel:'Ana Luiza', stage:'proposta', temperatura:'Quente (pediu orçamento, negociação iniciada)', servico:'Microbiologia de alimentos', valor:500, data_ultimo_contato:'2026-03-13', proxima_acao:'WhatsApp', data_followup:'2026-03-16', previsao_fechamento:'2026-06-20', motivo_perda:'', obs:'' },
+    { id:2, data_lead:'2026-03-13', id_lead:'002', empresa:'Taís Pabst Vater', cidade:'Joinville', estado:'SC', cnpj:'8597378964', segmento:'Mel', origem:'Cliente atual', contato_nome:'Taís Pabst Vater', contato_cargo:'Administrativo', whatsapp:'47 99625-8539', email:'taispabstvater@gmail.com', responsavel:'Ana Luiza', stage:'elaboracao', temperatura:'Quente (pediu orçamento, negociação iniciada)', servico:'Água e potabilidade', valor:100, data_ultimo_contato:'2026-03-13', proxima_acao:'WhatsApp', data_followup:'2026-03-16', previsao_fechamento:'2026-06-20', motivo_perda:'', obs:'Produtores rurais, já fazem análise porém em outro cpf.' },
+    { id:3, data_lead:'2026-03-10', id_lead:'003', empresa:'AgroVerde Ltda', cidade:'Lages', estado:'SC', cnpj:'', segmento:'Agropecuária', origem:'Prospecção ativa', contato_nome:'João Martins', contato_cargo:'Proprietário', whatsapp:'49 99101-2030', email:'joao@agroverde.com', responsavel:'Ana Luiza', stage:'qualificacao', temperatura:'Morno (avaliando)', servico:'Microbiologia de alimentos', valor:2400, data_ultimo_contato:'2026-03-08', proxima_acao:'Ligação', data_followup:'2026-03-15', previsao_fechamento:'2026-07-01', motivo_perda:'', obs:'Aguardando reunião com sócios.' },
+    { id:4, data_lead:'2026-02-20', id_lead:'004', empresa:'Queijaria Serrana', cidade:'Campos Novos', estado:'SC', cnpj:'', segmento:'Laticínios', origem:'Indicação de cliente', contato_nome:'Maria Ester', contato_cargo:'Gerente', whatsapp:'49 98800-1234', email:'maria@queijaria.com', responsavel:'Ana Luiza', stage:'fechado', temperatura:'Quente (pediu orçamento, negociação iniciada)', servico:'Microbiologia de alimentos', valor:3200, data_ultimo_contato:'2026-03-12', proxima_acao:'Aguardar retorno', data_followup:'2026-04-01', previsao_fechamento:'2026-03-30', motivo_perda:'', obs:'Contrato assinado. Início em abril.' },
+    { id:5, data_lead:'2026-03-01', id_lead:'005', empresa:'Mel Nativo SC', cidade:'Blumenau', estado:'SC', cnpj:'', segmento:'Mel', origem:'Redes sociais', contato_nome:'Carlos Ramos', contato_cargo:'Proprietário', whatsapp:'47 99234-5678', email:'carlos@melnativo.com', responsavel:'Ana Luiza', stage:'prospeccao', temperatura:'Frio (sem interesse)', servico:'Água e potabilidade', valor:800, data_ultimo_contato:'2026-03-01', proxima_acao:'E-mail', data_followup:'2026-03-20', previsao_fechamento:'', motivo_perda:'', obs:'' },
+    { id:6, data_lead:'2026-02-15', id_lead:'006', empresa:'Frigorífico Pinheiro', cidade:'Chapecó', estado:'SC', cnpj:'', segmento:'Frigorífico', origem:'Prospecção ativa', contato_nome:'Fernanda Lima', contato_cargo:'Diretor', whatsapp:'49 99888-0001', email:'fernanda@pinheiro.com', responsavel:'Ana Luiza', stage:'perdido', temperatura:'Sem retorno', servico:'Microbiologia de alimentos', valor:8000, data_ultimo_contato:'2026-02-28', proxima_acao:'', data_followup:'', previsao_fechamento:'', motivo_perda:'Escolheu concorrente com menor preço', obs:'' },
+    { id:7, data_lead:'2026-03-11', id_lead:'007', empresa:'Cervejaria Artesanal do Vale', cidade:'Brusque', estado:'SC', cnpj:'', segmento:'Bebidas', origem:'Indicação de cliente', contato_nome:'Paulo Salave', contato_cargo:'Proprietário', whatsapp:'47 99700-3030', email:'paulo@cervaleio.com', responsavel:'Ana Luiza', stage:'negociacao', temperatura:'Quente (pediu orçamento, negociação iniciada)', servico:'Água e potabilidade', valor:1500, data_ultimo_contato:'2026-03-13', proxima_acao:'Reunião online', data_followup:'2026-03-17', previsao_fechamento:'2026-04-15', motivo_perda:'', obs:'Negociando pacote anual.' },
+  ];
+}
+
+let leads = [];
+let config = defaultConfig();
+let nextId = 1;
+let currentView = 'kanban';
+let listSort = { col: 'data_lead', dir: -1 };
+let metaPeriod = 'dia';
+
+// ─── UTILS ───
+function fmt(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function daysDiff(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr); const now = new Date();
+  d.setHours(0,0,0,0); now.setHours(0,0,0,0);
+  return Math.floor((now - d) / 86400000);
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  const [y,m,d] = String(s).split('-');
+  return `${d}/${m}/${y}`;
+}
+function toast(msg) {
+  const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2200);
+}
+function tempColor(t) {
+  if (!t) return { bg: 'var(--gray-bg)', color: 'var(--gray)' };
+  t = t.toLowerCase();
+  if (t.includes('quente')) return { bg: 'var(--red-bg)', color: 'var(--red)' };
+  if (t.includes('morno')) return { bg: 'var(--amber-bg)', color: 'var(--amber)' };
+  if (t.includes('frio')) return { bg: 'var(--blue-bg)', color: 'var(--blue)' };
+  return { bg: 'var(--gray-bg)', color: 'var(--gray)' };
+}
+function tempShort(t) {
+  if (!t) return '';
+  const tl = t.toLowerCase();
+  if (tl.includes('quente')) return '🔥 Quente';
+  if (tl.includes('morno')) return '🌤 Morno';
+  if (tl.includes('frio')) return '❄️ Frio';
+  return t.split('(')[0].trim();
+}
+
+// ─── FILTERS SETUP ───
+function setupFilters() {
+  const respVals = [...new Set(leads.map(l=>l.responsavel).filter(Boolean))].sort();
+  const segVals = [...new Set(leads.map(l=>l.segmento).filter(Boolean))].sort();
+  const tempVals = [...new Set(leads.map(l=>l.temperatura).filter(Boolean))].sort();
+  const servVals = [...new Set(leads.map(l=>l.servico).filter(Boolean))].sort();
+  const stageVals = STAGES.map(s => ({ id: s.id, label: s.label }));
+  function populate(id, vals, isStage) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    if (isStage) {
+      sel.innerHTML = sel.options[0].outerHTML + vals.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+    } else {
+      sel.innerHTML = sel.options[0].outerHTML + vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    }
+    sel.value = cur;
+  }
+  populate('fil-resp', respVals);
+  populate('fil-seg', segVals);
+  populate('fil-temp', tempVals);
+  populate('fil-serv', servVals);
+  populate('lil-stage', stageVals, true);
+  populate('lil-seg', segVals);
+  populate('lil-temp', tempVals);
+  populate('lil-serv', servVals);
+}
+
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const resp = document.getElementById('fil-resp').value;
+  const seg = document.getElementById('fil-seg').value;
+  const temp = document.getElementById('fil-temp').value;
+  const serv = document.getElementById('fil-serv').value;
+  return leads.filter(l => {
+    if (q && !['empresa','contato_nome','cidade','servico','segmento','cnpj'].some(k => (l[k]||'').toLowerCase().includes(q))) return false;
+    if (resp && l.responsavel !== resp) return false;
+    if (seg && l.segmento !== seg) return false;
+    if (temp && l.temperatura !== temp) return false;
+    if (serv && l.servico !== serv) return false;
+    return true;
+  });
+}
+
+// ─── SWITCH VIEW ───
+function switchView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  currentView = id;
+  renderAll();
+}
+
+function renderAll() {
+  setupFilters();
+  if (currentView === 'kanban') renderKanban();
+  else if (currentView === 'lista') renderLista();
+  else if (currentView === 'followup') renderFollowup();
+  else if (currentView === 'metas') renderMetas();
+  else if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'config') renderConfig();
+}
+
+// ─── KANBAN ───
+function renderKanban() {
+  const filtered = getFiltered();
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  STAGES.forEach(st => {
+    const items = filtered.filter(l => l.stage === st.id);
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.innerHTML = `
+      <div class="col-head">
+        <div class="col-label"><span class="col-dot" style="background:${st.color}"></span><span style="color:${st.color}">${st.label}</span></div>
+        <span class="col-count">${items.length}</span>
+      </div>
+      <div class="col-body">
+        ${items.length === 0 ? '<div class="card-empty">Sem leads</div>' : items.map(l => cardHTML(l, st)).join('')}
+      </div>`;
+    board.appendChild(col);
+  });
+}
+
+function cardHTML(l, st) {
+  const tc = tempColor(l.temperatura);
+  const dias = daysDiff(l.data_ultimo_contato);
+  const dfu = daysDiff(l.data_followup);
+  const overdue = dfu !== null && dfu > 0;
+  return `<div class="card" onclick="openModal(${l.id})" style="--stage-color:${st.color}">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${st.color};border-radius:${st.id==='fechado'?'10px 10px 0 0':'10px 10px 0 0'}"></div>
+    <div class="card-top">
+      <div class="card-name">${esc(l.empresa||l.contato_nome)}</div>
+      ${l.temperatura ? `<span class="temp-badge" style="background:${tc.bg};color:${tc.color}">${tempShort(l.temperatura)}</span>` : ''}
+    </div>
+    <div class="card-company">${esc(l.contato_nome)}${l.contato_cargo ? ' · '+esc(l.contato_cargo) : ''}</div>
+    <div class="card-info">
+      ${(l.cidade||l.estado) ? `<div>📍 ${esc(l.cidade||'')}${l.estado ? ', '+esc(l.estado) : ''}</div>` : ''}
+      ${l.whatsapp ? `<div>📞 ${esc(l.whatsapp)}</div>` : ''}
+    </div>
+    ${l.valor ? `<div class="card-value">${fmt(l.valor)}</div>` : ''}
+    <div class="card-footer">
+      ${l.segmento ? `<span class="chip chip-seg">${esc(l.segmento)}</span>` : ''}
+      ${l.servico ? `<span class="chip chip-serv">${esc(l.servico)}</span>` : ''}
+      ${l.data_followup ? `<span class="chip ${overdue ? 'chip-overdue' : 'chip-followup'}">${overdue ? '⚠ ' : ''}${fmtDate(l.data_followup)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+// ─── LISTA ───
+function getListFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const stage = document.getElementById('lil-stage').value;
+  const seg = document.getElementById('lil-seg').value;
+  const temp = document.getElementById('lil-temp').value;
+  const serv = document.getElementById('lil-serv').value;
+  return leads.filter(l => {
+    if (q && !['empresa','contato_nome','cidade','servico','segmento','cnpj','whatsapp','email'].some(k => (l[k]||'').toLowerCase().includes(q))) return false;
+    if (stage && l.stage !== stage) return false;
+    if (seg && l.segmento !== seg) return false;
+    if (temp && l.temperatura !== temp) return false;
+    if (serv && l.servico !== serv) return false;
+    return true;
+  });
+}
+
+function sortList(col) {
+  if (listSort.col === col) { listSort.dir *= -1; }
+  else { listSort.col = col; listSort.dir = 1; }
+  renderLista();
+}
+
+function renderLista() {
+  const COLS = [
+    { key:'data_lead',    label:'Data',           fmt: l => fmtDate(l.data_lead) },
+    { key:'empresa',      label:'Empresa / Lead', fmt: l => `<div class="lead-name">${esc(l.empresa||l.contato_nome)}</div><div class="lead-contact">${esc(l.contato_nome)}</div>`, cls:'td-main', nosort: false },
+    { key:'cidade',       label:'Cidade / UF',    fmt: l => l.cidade ? `${esc(l.cidade)}, ${esc(l.estado||'')}` : esc(l.estado||'—') },
+    { key:'segmento',     label:'Segmento',       fmt: l => l.segmento ? `<span class="chip chip-seg">${esc(l.segmento)}</span>` : '—' },
+    { key:'servico',      label:'Serviço',        fmt: l => l.servico ? `<span class="chip chip-serv">${esc(l.servico)}</span>` : '—' },
+    { key:'stage',        label:'Etapa',          fmt: l => { const st = STAGES.find(s=>s.id===l.stage); return st ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:${st.color};flex-shrink:0"></span>${st.label}</span>` : '—'; } },
+    { key:'temperatura',  label:'Temperatura',    fmt: l => { const tc=tempColor(l.temperatura); return l.temperatura ? `<span class="temp-badge" style="background:${tc.bg};color:${tc.color}">${tempShort(l.temperatura)}</span>` : '—'; } },
+    { key:'valor',        label:'Valor',          fmt: l => l.valor ? `<span style="font-family:var(--mono);font-size:12px;font-weight:500">${fmt(l.valor)}</span>` : '—' },
+    { key:'whatsapp',     label:'WhatsApp',       fmt: l => esc(l.whatsapp||'—') },
+    { key:'data_followup',label:'Follow-up',      fmt: l => { const dfu=daysDiff(l.data_followup); const ov=dfu!==null&&dfu>0; return l.data_followup ? `<span class="chip ${ov?'chip-overdue':'chip-followup'}">${ov?'⚠ ':''}${fmtDate(l.data_followup)}</span>` : '—'; } },
+    { key:'proxima_acao', label:'Próxima ação',   fmt: l => l.proxima_acao ? `<span class="chip chip-serv">${esc(l.proxima_acao)}</span>` : '—' },
+    { key:'responsavel',  label:'Responsável',    fmt: l => esc(l.responsavel||'—') },
+  ];
+
+  let items = getListFiltered();
+  // sort
+  items = [...items].sort((a,b) => {
+    let va = a[listSort.col]||'', vb = b[listSort.col]||'';
+    if (listSort.col === 'valor') { va = Number(va); vb = Number(vb); return listSort.dir*(va-vb); }
+    return listSort.dir * String(va).localeCompare(String(vb), 'pt-BR');
+  });
+
+  document.getElementById('list-count').textContent = `${items.length} lead${items.length!==1?'s':''}`;
+
+  const thead = document.getElementById('list-thead');
+  thead.innerHTML = '<tr>' + COLS.map(c => {
+    const sorted = listSort.col === c.key;
+    const icon = sorted ? (listSort.dir === 1 ? '▲' : '▼') : '↕';
+    return `<th class="${sorted?'sorted':''}" onclick="sortList('${c.key}')">${c.label} <span class="sort-icon">${icon}</span></th>`;
+  }).join('') + '</tr>';
+
+  const tbody = document.getElementById('list-tbody');
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="${COLS.length}" class="list-empty">Nenhum lead encontrado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(l => `<tr onclick="openModal(${l.id})">` +
+    COLS.map(c => `<td${c.cls?' class="'+c.cls+'"':''}>${c.fmt(l)}</td>`).join('') +
+  `</tr>`).join('');
+}
+
+// ─── FOLLOW-UP ───
+function renderFollowup() {
+  const today_str = today();
+  const all = getFiltered().filter(l => l.stage !== 'fechado' && l.stage !== 'perdido');
+  const overdue = all.filter(l => l.data_followup && l.data_followup < today_str).sort((a,b) => a.data_followup.localeCompare(b.data_followup));
+  const todayItems = all.filter(l => l.data_followup === today_str);
+  const upcoming = all.filter(l => l.data_followup > today_str).sort((a,b) => a.data_followup.localeCompare(b.data_followup)).slice(0, 20);
+  const noDate = all.filter(l => !l.data_followup);
+
+  function tableRows(items) {
+    if (!items.length) return '<tr><td colspan="6" style="color:var(--text3);padding:14px;text-align:center;font-size:12px">Nenhum lead</td></tr>';
+    return items.map(l => {
+      const dias = daysDiff(l.data_ultimo_contato);
+      const tc = tempColor(l.temperatura);
+      const st = STAGES.find(s => s.id === l.stage);
+      return `<tr onclick="openModal(${l.id})">
+        <td><div class="name">${esc(l.empresa||l.contato_nome)}</div><div class="company">${esc(l.contato_nome)}</div></td>
+        <td>${st ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px"><span style="width:6px;height:6px;border-radius:50%;background:${st.color};flex-shrink:0"></span>${st.label}</span>` : ''}</td>
+        <td><span class="temp-badge" style="background:${tc.bg};color:${tc.color}">${tempShort(l.temperatura)}</span></td>
+        <td>${l.proxima_acao ? `<span class="chip chip-serv">${esc(l.proxima_acao)}</span>` : '—'}</td>
+        <td style="font-family:var(--mono);font-size:12px">${fmtDate(l.data_followup)}</td>
+        <td>${dias !== null ? `<span class="dias-badge" style="background:${dias>7?'var(--red-bg)':dias>3?'var(--amber-bg)':'var(--green-bg)'};color:${dias>7?'var(--red)':dias>3?'var(--amber)':'var(--green)'}">${dias}d</span>` : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('followup-content').innerHTML = `
+    ${overdue.length ? `<div class="section-title" style="color:var(--red)">⚠ Atrasados <span class="badge" style="background:var(--red-bg);color:var(--red)">${overdue.length}</span></div>
+    <table class="fu-table"><thead><tr><th>Lead</th><th>Etapa</th><th>Temperatura</th><th>Próxima ação</th><th>Follow-up</th><th>Dias sem contato</th></tr></thead><tbody>${tableRows(overdue)}</tbody></table>` : ''}
+    <div class="section-title">Hoje <span class="badge" style="background:var(--amber-bg);color:var(--amber)">${todayItems.length}</span></div>
+    <table class="fu-table"><thead><tr><th>Lead</th><th>Etapa</th><th>Temperatura</th><th>Próxima ação</th><th>Follow-up</th><th>Dias sem contato</th></tr></thead><tbody>${tableRows(todayItems)}</tbody></table>
+    <div class="section-title">Próximos</div>
+    <table class="fu-table"><thead><tr><th>Lead</th><th>Etapa</th><th>Temperatura</th><th>Próxima ação</th><th>Follow-up</th><th>Dias sem contato</th></tr></thead><tbody>${tableRows(upcoming)}</tbody></table>
+    ${noDate.length ? `<div class="section-title" style="color:var(--text3)">Sem data de follow-up <span class="badge" style="background:var(--gray-bg);color:var(--gray)">${noDate.length}</span></div>
+    <table class="fu-table"><thead><tr><th>Lead</th><th>Etapa</th><th>Temperatura</th><th>Próxima ação</th><th>Follow-up</th><th>Dias sem contato</th></tr></thead><tbody>${tableRows(noDate)}</tbody></table>` : ''}
+  `;
+}
+
+// ─── DASHBOARD ───
+function renderDashboard() {
+  const active = leads.filter(l => l.stage !== 'perdido');
+  const pipeline = active.filter(l => l.stage !== 'fechado').reduce((s,l) => s+Number(l.valor||0), 0);
+  const fechados = leads.filter(l => l.stage === 'fechado');
+  const perdidos = leads.filter(l => l.stage === 'perdido');
+  const valorFechado = fechados.reduce((s,l) => s+Number(l.valor||0), 0);
+  const total = leads.length;
+
+  // Segmentos
+  const bySegmento = {};
+  leads.forEach(l => { if(l.segmento) bySegmento[l.segmento] = (bySegmento[l.segmento]||0)+1; });
+  const segTop = Object.entries(bySegmento).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxSeg = segTop[0]?.[1] || 1;
+
+  // Serviços
+  const byServ = {};
+  leads.forEach(l => { if(l.servico) byServ[l.servico] = (byServ[l.servico]||0)+1; });
+  const servTop = Object.entries(byServ).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxServ = servTop[0]?.[1] || 1;
+
+  // Origens
+  const byOrigem = {};
+  leads.forEach(l => { if(l.origem) byOrigem[l.origem] = (byOrigem[l.origem]||0)+1; });
+  const origemTop = Object.entries(byOrigem).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxOrigem = origemTop[0]?.[1] || 1;
+
+  const barColors = ['#7C3AED','#1447A0','#115E59','#166534','#BA7517','#9D174D','#9A9890'];
+
+  document.getElementById('dash-content').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total de leads</div><div class="kpi-value">${total}</div></div>
+      <div class="kpi"><div class="kpi-label">Pipeline ativo</div><div class="kpi-value">${fmt(pipeline)}</div><div class="kpi-sub">${active.filter(l=>l.stage!=='fechado').length} leads</div></div>
+      <div class="kpi"><div class="kpi-label">Fechados</div><div class="kpi-value">${fechados.length}</div><div class="kpi-sub">${fmt(valorFechado)}</div></div>
+      <div class="kpi"><div class="kpi-label">Perdidos</div><div class="kpi-value">${perdidos.length}</div><div class="kpi-sub">${total ? Math.round(perdidos.length/total*100)+'% do total' : ''}</div></div>
+      <div class="kpi"><div class="kpi-label">Ticket médio</div><div class="kpi-value">${fmt(active.length ? active.reduce((s,l)=>s+Number(l.valor||0),0)/active.length : 0)}</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-card-title">Funil por etapa</div>
+        ${STAGES.map(st => {
+          const count = leads.filter(l=>l.stage===st.id).length;
+          const val = leads.filter(l=>l.stage===st.id).reduce((s,l)=>s+Number(l.valor||0),0);
+          return `<div class="funnel-row">
+            <span class="funnel-dot" style="background:${st.color}"></span>
+            <span class="funnel-label">${st.label}</span>
+            <span class="funnel-count">${count}</span>
+            <span class="funnel-val">${fmt(val)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-title">Por segmento</div>
+        ${segTop.map(([label, val], i) => `<div class="bar-row">
+          <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxSeg*100)}%;background:${barColors[i%barColors.length]}"></div></div>
+          <div class="bar-val">${val}</div>
+        </div>`).join('')}
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-title">Por serviço</div>
+        ${servTop.map(([label, val], i) => `<div class="bar-row">
+          <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxServ*100)}%;background:${barColors[i%barColors.length]}"></div></div>
+          <div class="bar-val">${val}</div>
+        </div>`).join('')}
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-title">Por origem do lead</div>
+        ${origemTop.map(([label, val], i) => `<div class="bar-row">
+          <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxOrigem*100)}%;background:${barColors[i%barColors.length]}"></div></div>
+          <div class="bar-val">${val}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ─── MODAL ───
+function openModal(id) {
+  const lead = id ? leads.find(l => l.id === id) : null;
+  const isNew = !lead;
+  const d = lead || { data_lead: today(), id_lead:'', empresa:'', cidade:'', estado:'SC', cnpj:'', segmento:'', origem:'', contato_nome:'', contato_cargo:'', whatsapp:'', email:'', responsavel:'', stage:'prospeccao', temperatura:'', servico:'', valor:'', data_ultimo_contato: today(), proxima_acao:'', data_followup:'', previsao_fechamento:'', motivo_perda:'', obs:'' };
+
+  const stageOpts = STAGES.map(s => `<option value="${s.id}" ${d.stage===s.id?'selected':''}>${s.label}</option>`).join('');
+  const tempOpts = ['', ...TEMP_OPTS].map(t => `<option value="${esc(t)}" ${d.temperatura===t?'selected':''}>${esc(t)||'Selecionar...'}</option>`).join('');
+  const acaoOpts = ['', ...ACAO_OPTS].map(a => `<option value="${esc(a)}" ${d.proxima_acao===a?'selected':''}>${esc(a)||'Selecionar...'}</option>`).join('');
+  const origemOpts = ['', ...ORIGEM_OPTS].map(o => `<option value="${esc(o)}" ${d.origem===o?'selected':''}>${esc(o)||'Selecionar...'}</option>`).join('');
+  const cargoOpts = ['', ...CARGO_OPTS].map(c => `<option value="${esc(c)}" ${d.contato_cargo===c?'selected':''}>${esc(c)||'Selecionar...'}</option>`).join('');
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="overlay" id="overlay" onclick="closeOnBg(event)">
+    <div class="modal">
+      <div class="modal-hd">
+        <div class="modal-title">${isNew ? 'Novo lead' : 'Editar lead'}</div>
+        <button class="btn-close" onclick="closeModal()">×</button>
+      </div>
+
+      <div class="modal-section">Dados da empresa</div>
+      <div class="form-grid">
+        <div class="field"><label>Data do lead</label><input type="date" id="f-data_lead" value="${esc(d.data_lead)}"></div>
+        <div class="field"><label>ID do lead</label><input type="text" id="f-id_lead" value="${esc(d.id_lead)}" placeholder="Ex: 001"></div>
+        <div class="field full"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa"></div>
+        <div class="field"><label>Cidade</label><input type="text" id="f-cidade" value="${esc(d.cidade)}" placeholder="Cidade"></div>
+        <div class="field"><label>Estado (UF)</label><input type="text" id="f-estado" value="${esc(d.estado)}" placeholder="SC" maxlength="2" style="text-transform:uppercase"></div>
+        <div class="field"><label>CNPJ / CPF</label><input type="text" id="f-cnpj" value="${esc(d.cnpj)}" placeholder="xx.xxx.xxx/0001-xx"></div>
+        <div class="field"><label>Segmento</label><input type="text" id="f-segmento" value="${esc(d.segmento)}" placeholder="Ex: Indústria de alimentos"></div>
+        <div class="field"><label>Origem do lead</label><select id="f-origem">${origemOpts}</select></div>
+      </div>
+
+      <div class="modal-section">Contato</div>
+      <div class="form-grid">
+        <div class="field"><label>Nome do contato</label><input type="text" id="f-contato_nome" value="${esc(d.contato_nome)}" placeholder="Nome completo"></div>
+        <div class="field"><label>Cargo</label><select id="f-contato_cargo">${cargoOpts}</select></div>
+        <div class="field"><label>WhatsApp / Tel</label><input type="text" id="f-whatsapp" value="${esc(d.whatsapp)}" placeholder="(xx) 9xxxx-xxxx"></div>
+        <div class="field"><label>E-mail</label><input type="text" id="f-email" value="${esc(d.email)}" placeholder="email@empresa.com"></div>
+      </div>
+
+      <div class="modal-section">Oportunidade comercial</div>
+      <div class="form-grid">
+        <div class="field"><label>Responsável</label><select id="f-responsavel">${['', ...(config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('')}</select></div>
+        <div class="field"><label>Etapa do pipeline</label><select id="f-stage">${stageOpts}</select></div>
+        <div class="field"><label>Temperatura</label><select id="f-temperatura">${tempOpts}</select></div>
+        <div class="field"><label>Serviço de interesse</label><input type="text" id="f-servico" value="${esc(d.servico)}" placeholder="Ex: Microbiologia de alimentos"></div>
+        <div class="field"><label>Valor potencial (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0"></div>
+        <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${esc(d.previsao_fechamento)}"></div>
+      </div>
+
+      <div class="modal-section">Follow-up</div>
+      <div class="form-grid">
+        <div class="field"><label>Data último contato</label><input type="date" id="f-data_ultimo_contato" value="${esc(d.data_ultimo_contato)}"></div>
+        <div class="field"><label>Próxima ação</label><select id="f-proxima_acao">${acaoOpts}</select></div>
+        <div class="field"><label>Data próximo follow-up</label><input type="date" id="f-data_followup" value="${esc(d.data_followup)}"></div>
+        <div class="field"><label>Motivo de perda</label><input type="text" id="f-motivo_perda" value="${esc(d.motivo_perda)}" placeholder="Preencher se perdido"></div>
+        <div class="field full"><label>Observações</label><textarea id="f-obs" placeholder="Contexto, histórico, próximos passos...">${esc(d.obs)}</textarea></div>
+      </div>
+
+      <div class="modal-footer">
+        ${!isNew ? `<button class="btn-del" onclick="deleteLead(${d.id})">Excluir</button>` : ''}
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-save" onclick="saveLead(${isNew?'null':d.id})">${isNew ? 'Adicionar lead' : 'Salvar alterações'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function closeOnBg(e) { if (e.target.id === 'overlay') closeModal(); }
+function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+function saveLead(id) {
+  const empresa = document.getElementById('f-empresa').value.trim();
+  const contato = document.getElementById('f-contato_nome').value.trim();
+  if (!empresa && !contato) { alert('Informe pelo menos o nome da empresa ou do contato.'); return; }
+  const obj = {
+    data_lead: document.getElementById('f-data_lead').value,
+    id_lead: document.getElementById('f-id_lead').value.trim(),
+    empresa, cidade: document.getElementById('f-cidade').value.trim(),
+    estado: document.getElementById('f-estado').value.trim().toUpperCase(),
+    cnpj: document.getElementById('f-cnpj').value.trim(),
+    segmento: document.getElementById('f-segmento').value.trim(),
+    origem: document.getElementById('f-origem').value,
+    contato_nome: contato,
+    contato_cargo: document.getElementById('f-contato_cargo').value,
+    whatsapp: document.getElementById('f-whatsapp').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    responsavel: document.getElementById('f-responsavel').value,
+    stage: document.getElementById('f-stage').value,
+    temperatura: document.getElementById('f-temperatura').value,
+    servico: document.getElementById('f-servico').value.trim(),
+    valor: parseFloat(document.getElementById('f-valor').value)||0,
+    data_ultimo_contato: document.getElementById('f-data_ultimo_contato').value,
+    proxima_acao: document.getElementById('f-proxima_acao').value,
+    data_followup: document.getElementById('f-data_followup').value,
+    previsao_fechamento: document.getElementById('f-previsao_fechamento').value,
+    motivo_perda: document.getElementById('f-motivo_perda').value.trim(),
+    obs: document.getElementById('f-obs').value.trim(),
+  };
+  if (id) {
+    const idx = leads.findIndex(l => l.id === id);
+    leads[idx] = { ...leads[idx], ...obj };
+    toast('Lead atualizado ✓');
+  } else {
+    leads.push({ id: nextId++, ...obj });
+    toast('Lead adicionado ✓');
+  }
+  save(); closeModal(); renderAll();
+}
+
+function deleteLead(id) {
+  if (!confirm('Remover este lead permanentemente?')) return;
+  leads = leads.filter(l => l.id !== id);
+  save(); closeModal(); renderAll(); toast('Lead removido');
+}
+
+// ─── METAS ───
+function setMetaPeriod(p, btn) {
+  metaPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMetas();
+}
+
+function renderMetas() {
+  const resp = config.responsaveis || [];
+  const grid = document.getElementById('vendedor-grid');
+  if (!grid) return;
+  if (!resp.length) {
+    grid.innerHTML = `<div class="meta-empty" style="grid-column:1/-1"><div class="meta-empty-icon">👤</div>Cadastre responsáveis em Config para ver as metas.</div>`;
+    return;
+  }
+
+  const todayStr = today();
+  const [ty, tm] = todayStr.split('-');
+  const mesStr = `${ty}-${tm}`;
+
+  // Dias úteis no mês (aproximado: dias do mês - fins de semana)
+  const daysInMonth = new Date(parseInt(ty), parseInt(tm), 0).getDate();
+  const firstDay = new Date(parseInt(ty), parseInt(tm)-1, 1).getDay();
+  let workdays = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const wd = (firstDay + d - 1) % 7;
+    if (wd !== 0 && wd !== 6) workdays++;
+  }
+
+  grid.innerHTML = resp.map(nome => {
+    const meta = config.metas[nome] || { diaria: 0, mensal: 0 };
+    const metaDia = Number(meta.diaria) || 0;
+    const metaMes = Number(meta.mensal) || 0;
+
+    // Fechados hoje
+    const fechadosHoje = leads.filter(l =>
+      l.responsavel === nome && l.stage === 'fechado' &&
+      (l.data_ultimo_contato === todayStr || l.data_lead === todayStr)
+    );
+    const valorHoje = fechadosHoje.reduce((s,l) => s + Number(l.valor||0), 0);
+
+    // Fechados no mês
+    const fechadosMes = leads.filter(l =>
+      l.responsavel === nome && l.stage === 'fechado' &&
+      ((l.data_ultimo_contato||'').startsWith(mesStr) || (l.data_lead||'').startsWith(mesStr))
+    );
+    const valorMes = fechadosMes.reduce((s,l) => s + Number(l.valor||0), 0);
+
+    // Leads ativos
+    const leadsAtivos = leads.filter(l => l.responsavel === nome && l.stage !== 'fechado' && l.stage !== 'perdido').length;
+    const leadsTotal = leads.filter(l => l.responsavel === nome).length;
+
+    function progressBar(atual, meta, cor) {
+      const pct = meta > 0 ? Math.min(100, Math.round(atual / meta * 100)) : 0;
+      const hit = pct >= 100;
+      return `
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${cor}"></div></div>
+        <div class="meta-pct ${hit ? 'hit' : ''}">${hit ? '✓ Meta atingida!' : pct + '% da meta'}</div>`;
+    }
+
+    const showDia = metaPeriod === 'dia';
+    const showMes = metaPeriod === 'mes';
+
+    return `<div class="vendedor-card">
+      <div class="vendedor-name">${esc(nome)}</div>
+      <div class="vendedor-sub">${leadsAtivos} lead${leadsAtivos!==1?'s':''} ativo${leadsAtivos!==1?'s':''} · ${leadsTotal} total</div>
+      ${showDia ? `
+      <div class="meta-row">
+        <div class="meta-row-head">
+          <span class="meta-row-label">Meta diária</span>
+          <span class="meta-row-nums"><b>${fmt(valorHoje)}</b> / ${fmt(metaDia)}</span>
+        </div>
+        ${progressBar(valorHoje, metaDia, '#166534')}
+      </div>` : ''}
+      ${showMes ? `
+      <div class="meta-row">
+        <div class="meta-row-head">
+          <span class="meta-row-label">Meta mensal</span>
+          <span class="meta-row-nums"><b>${fmt(valorMes)}</b> / ${fmt(metaMes)}</span>
+        </div>
+        ${progressBar(valorMes, metaMes, '#1447A0')}
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">${workdays} dias úteis no mês · projeção: ${metaMes > 0 && workdays > 0 ? fmt(Math.round(valorMes / (new Date().getDate()) * workdays)) : '—'}</div>
+      </div>` : ''}
+      ${metaDia === 0 && metaMes === 0 ? `<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhuma meta definida. Configure em <b>⚙ Config</b>.</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── CONFIG ───
+function renderConfig() {
+  renderTagList('responsaveis', 'cfg-resp-list');
+  renderTagList('servicos', 'cfg-serv-list');
+  renderTagList('segmentos', 'cfg-seg-list');
+  renderMetasCfgTable();
+}
+
+function renderMetasCfgTable() {
+  const el = document.getElementById('cfg-metas-table');
+  if (!el) return;
+  const resp = config.responsaveis || [];
+  if (!resp.length) {
+    el.innerHTML = `<p style="font-size:12px;color:var(--text3);padding:8px 0">Cadastre responsáveis acima para definir metas.</p>`;
+    return;
+  }
+  el.innerHTML = `<table class="meta-cfg-table">
+    <thead><tr><th>Responsável</th><th>Meta diária (R$)</th><th>Meta mensal (R$)</th></tr></thead>
+    <tbody>${resp.map((nome, i) => {
+      const m = config.metas[nome] || { diaria: 0, mensal: 0 };
+      return `<tr>
+        <td style="font-weight:500;color:var(--text)">${esc(nome)}</td>
+        <td><input class="meta-cfg-input" type="number" id="meta-dia-${i}" value="${m.diaria||0}" min="0" placeholder="0"></td>
+        <td><input class="meta-cfg-input" type="number" id="meta-mes-${i}" value="${m.mensal||0}" min="0" placeholder="0"></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function saveMetasCfg() {
+  const resp = config.responsaveis || [];
+  if (!config.metas) config.metas = {};
+  resp.forEach((nome, i) => {
+    const dia = parseFloat(document.getElementById('meta-dia-'+i)?.value) || 0;
+    const mes = parseFloat(document.getElementById('meta-mes-'+i)?.value) || 0;
+    config.metas[nome] = { diaria: dia, mensal: mes };
+  });
+  saveConfig();
+  toast('Metas salvas ✓');
+}
+
+function renderTagList(key, listId) {
+  const el = document.getElementById(listId);
+  if (!el) return;
+  const items = config[key] || [];
+  el.innerHTML = items.length === 0
+    ? `<span style="font-size:12px;color:var(--text3)">Nenhum cadastrado ainda.</span>`
+    : items.map((v, i) => `<span class="tag-item">${esc(v)}<button onclick="removeCfgItem('${key}',${i},'${listId}')" title="Remover">×</button></span>`).join('');
+}
+
+function addCfgItem(key, inputId, listId) {
+  const input = document.getElementById(inputId);
+  const val = input.value.trim();
+  if (!val) return;
+  if (config[key].includes(val)) { toast('Já existe na lista'); return; }
+  config[key].push(val);
+  saveConfig();
+  input.value = '';
+  renderTagList(key, listId);
+  toast('Adicionado ✓');
+}
+
+function removeCfgItem(key, idx, listId) {
+  config[key].splice(idx, 1);
+  saveConfig();
+  renderTagList(key, listId);
+}
+
+// Start
+initCloud();
+</script>
+</body>
+</html>
