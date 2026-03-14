@@ -274,9 +274,57 @@ label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transfor
   .dash-grid { grid-template-columns: 1fr; }
   .search { width: 130px; }
 }
+
+/* ─── LOGIN ─── */
+.login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; padding: 24px;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 36px 40px;
+  width: 100%; max-width: 360px; text-align: center;
+  animation: up 0.2s ease;
+}
+.login-logo { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
+.login-field { text-align: left; margin-bottom: 16px; }
+.login-field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); display: block; margin-bottom: 5px; }
+.login-input {
+  width: 100%; font-size: 14px; padding: 10px 13px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--text); outline: none;
+  font-family: var(--font); letter-spacing: 0.1em;
+  transition: border-color 0.13s;
+}
+.login-input:focus { border-color: var(--border2); background: var(--surface); }
+.login-btn {
+  width: 100%; font-size: 14px; font-weight: 600; padding: 11px;
+  border-radius: var(--r-sm); background: var(--text); color: #fff;
+  border: none; cursor: pointer; font-family: var(--font);
+  transition: opacity 0.13s; margin-top: 4px;
+}
+.login-btn:hover { opacity: 0.82; }
+.login-error { font-size: 12px; color: var(--red); margin-top: 10px; min-height: 18px; }
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">CRM Zínia</div>
+    <div class="login-sub">Acesso restrito à equipe comercial</div>
+    <div class="login-field">
+      <label>Senha de acesso</label>
+      <input class="login-input" type="password" id="login-input" placeholder="••••••••••"
+        onkeydown="if(event.key==='Enter')checkLogin()">
+    </div>
+    <button class="login-btn" onclick="checkLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
 
 <div class="nav">
   <div class="nav-brand"><div class="nav-brand-dot"></div>CRM Zínia</div>
@@ -389,6 +437,32 @@ label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transfor
   </div>
 </div>
 <script>
+// ─── LOGIN ───
+const SENHA = 'VENDASMXNS';
+function checkLogin() {
+  const val = document.getElementById('login-input').value;
+  if (val === SENHA) {
+    sessionStorage.setItem('crm_auth', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    initCloud();
+  } else {
+    document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('login-input').value = '';
+    document.getElementById('login-input').focus();
+  }
+}
+// Check if already authenticated this session
+if (sessionStorage.getItem('crm_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-screen').style.display = 'none';
+    initCloud();
+  });
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-input').focus();
+  });
+}
+
 const STAGES = [
   { id:'prospeccao',    label:'Prospecção',         color:'#9A9890' },
   { id:'qualificacao',  label:'Qualificação',        color:'#1447A0' },
@@ -1140,8 +1214,7 @@ function removeCfgItem(key, idx, listId) {
   renderTagList(key, listId);
 }
 
-// Start
-initCloud();
+// Start — iniciado pelo login
 </script>
 </body>
 </html>
