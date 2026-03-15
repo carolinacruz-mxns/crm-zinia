@@ -156,6 +156,21 @@ button,input,select,textarea{font-family:var(--font);}
 .renovacao-alerta{color:var(--amber);font-weight:600;}
 .renovacao-vencida{color:var(--red);font-weight:600;}
 
+/* PEDIDOS */
+.pedidos-section{margin-top:20px;}
+.pedidos-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.pedidos-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.pedidos-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);text-align:left;}
+.pedidos-table td{font-size:12px;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
+.pedidos-table tr:last-child td{border-bottom:none;}
+.pedidos-table tr:hover td{background:var(--surface2);}
+.status-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.status-aguardando{background:var(--amber-bg);color:var(--amber);}
+.status-concluido{background:var(--green-bg);color:var(--green);}
+.status-cancelado{background:var(--red-bg);color:var(--red);}
+.tipo-fixo{background:var(--blue-bg);color:var(--blue);font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;}
+.tipo-variavel{background:var(--purple-bg);color:var(--purple);font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;}
+
 /* HISTÓRICO */
 .hist-wrap{padding:20px;max-width:900px;margin:0 auto;}
 .hist-table{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;border-collapse:collapse;}
@@ -492,11 +507,13 @@ const DEFAULT_USERS = [
 // ═══════════════════════════════════════════
 let leads = [];
 let clientes = [];
+let pedidos = [];
 let historico = [];
 let config = defaultConfig();
 let usuarios = DEFAULT_USERS;
 let nextId = 1;
 let nextClienteId = 1;
+let nextPedidoId = 1;
 let currentView = 'kanban';
 let listSort = {col:'data_lead',dir:-1};
 let metaPeriod = 'dia';
@@ -605,9 +622,10 @@ async function sheetsPost(action, data) {
 async function initCloud() {
   showSyncStatus('🔄 Conectando...', 'var(--amber)');
   try {
-    const [ld, cd, cl, hi] = await Promise.all([
+    const [ld, cd, cl, hi, pd] = await Promise.all([
       sheetsGet('getLeads'), sheetsGet('getConfig'),
-      sheetsGet('getClientes'), sheetsGet('getHistorico')
+      sheetsGet('getClientes'), sheetsGet('getHistorico'),
+      sheetsGet('getPedidos')
     ]);
     leads = ld.leads || [];
     nextId = ld.nextId || (leads.reduce((m,l) => Math.max(m,l.id),0)+1);
@@ -615,6 +633,8 @@ async function initCloud() {
     clientes = cl.clientes || [];
     nextClienteId = cl.nextId || (clientes.reduce((m,c) => Math.max(m,c.id),0)+1);
     historico = hi.historico || [];
+    pedidos = pd.pedidos || [];
+    nextPedidoId = pd.nextId || (pedidos.reduce((m,p) => Math.max(m,p.id),0)+1);
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
     setInterval(autoRefresh, 30000);
@@ -624,6 +644,7 @@ async function initCloud() {
     config = loadLocalConfig();
     clientes = loadLocal('crm_clientes') || [];
     historico = loadLocal('crm_historico') || [];
+    pedidos = loadLocal('crm_pedidos') || [];
     renderAll();
   }
 }
@@ -631,13 +652,16 @@ async function initCloud() {
 async function autoRefresh() {
   if (isSyncing) return;
   try {
-    const [ld, cl, hi] = await Promise.all([
-      sheetsGet('getLeads'), sheetsGet('getClientes'), sheetsGet('getHistorico')
+    const [ld, cl, hi, pd] = await Promise.all([
+      sheetsGet('getLeads'), sheetsGet('getClientes'),
+      sheetsGet('getHistorico'), sheetsGet('getPedidos')
     ]);
     leads = ld.leads || [];
     nextId = ld.nextId || (leads.reduce((m,l)=>Math.max(m,l.id),0)+1);
     clientes = cl.clientes || [];
     historico = hi.historico || [];
+    pedidos = pd.pedidos || [];
+    nextPedidoId = pd.nextId || (pedidos.reduce((m,p)=>Math.max(m,p.id),0)+1);
     showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
     renderAll();
   } catch(e) {}
@@ -657,6 +681,11 @@ async function saveLeads() {
 async function saveClientes() {
   localStorage.setItem('crm_clientes', JSON.stringify(clientes));
   try { await sheetsPost('saveClientes', {clientes, nextId: nextClienteId}); } catch(e) {}
+}
+
+async function savePedidos() {
+  localStorage.setItem('crm_pedidos', JSON.stringify(pedidos));
+  try { await sheetsPost('savePedidos', {pedidos, nextId: nextPedidoId}); } catch(e) {}
 }
 
 async function saveHistorico() {
@@ -1042,19 +1071,21 @@ function renderMetas() {
 // CARTEIRA DE CLIENTES
 // ═══════════════════════════════════════════
 function renderCarteira() {
-  const totalVal = clientes.reduce((s,c)=>s+Number(c.valor_mensal||0),0);
+  const mesStr = today().substring(0,7);
+  const receitaMesReal = pedidos
+    .filter(p=>p.status==='concluido'&&(p.data||'').startsWith(mesStr))
+    .reduce((s,p)=>s+Number(p.valor||0),0);
   const totalAnual = clientes.reduce((s,c)=>s+Number(c.valor_anual||0),0);
-  const tod = today();
   const alertas = clientes.filter(c=>{
     if(!c.renovacao)return false;
-    const d = daysDiff(c.renovacao);
-    return d!==null && d>=-30 && d<=0;
+    const d=daysDiff(c.renovacao);
+    return d!==null&&d>=-30&&d<=0;
   }).length;
 
   document.getElementById('carteira-stats').innerHTML = `
     <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${clientes.length}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Receita mensal</div><div class="c-kpi-value" style="font-size:18px">${fmt(totalVal)}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Receita anual</div><div class="c-kpi-value" style="font-size:18px">${fmt(totalAnual)}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Faturado este mês</div><div class="c-kpi-value" style="font-size:18px">${fmt(receitaMesReal)}</div><div class="c-kpi-sub">pedidos concluídos</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Total pedidos mês</div><div class="c-kpi-value">${pedidos.filter(p=>(p.data||'').startsWith(mesStr)).length}</div><div class="c-kpi-sub">${pedidos.filter(p=>(p.data||'').startsWith(mesStr)&&p.status==='aguardando').length} aguardando</div></div>
     <div class="c-kpi"><div class="c-kpi-label">Renovações próximas</div><div class="c-kpi-value" style="color:${alertas>0?'var(--amber)':'var(--text)'}">${alertas}</div><div class="c-kpi-sub">próximos 30 dias</div></div>`;
 
   const tbody = document.getElementById('cliente-tbody');
@@ -1063,19 +1094,24 @@ function renderCarteira() {
     return;
   }
   tbody.innerHTML = clientes.map(c=>{
-    const diasRen = daysDiff(c.renovacao);
-    let renClass='', renIcon='';
+    const diasRen=daysDiff(c.renovacao);
+    let renClass='',renIcon='';
     if(diasRen!==null){
       if(diasRen>0){renClass='renovacao-vencida';renIcon='⚠ ';}
       else if(diasRen>=-30){renClass='renovacao-alerta';renIcon='🔔 ';}
       else{renClass='renovacao-ok';}
     }
+    const pedMes=pedidos.filter(p=>p.cliente_id==c.id&&(p.data||'').startsWith(mesStr));
+    const faturadoMes=pedMes.filter(p=>p.status==='concluido').reduce((s,p)=>s+Number(p.valor||0),0);
+    const tipoTag=c.tipo_valor==='variavel'
+      ?`<span class="tipo-variavel">Variável</span>`
+      :`<span class="tipo-fixo">Fixo</span>`;
     return `<tr onclick="openClienteModal(${c.id})">
-      <td><div class="lead-name" style="font-size:13px;font-weight:600;color:var(--text)">${esc(c.nome)}</div><div style="font-size:11px;color:var(--text3)">${esc(c.contato||'')}</div></td>
+      <td><div class="lead-name" style="font-size:13px;font-weight:600;color:var(--text)">${esc(c.nome)}</div><div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:2px">${esc(c.contato||'')} ${tipoTag}</div></td>
       <td>${esc(c.segmento||'—')}</td>
       <td>${esc(c.servico||'—')}</td>
-      <td style="font-family:var(--mono);font-weight:500">${fmt(c.valor_mensal)}</td>
-      <td style="font-family:var(--mono)">${fmt(c.valor_anual)}</td>
+      <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(faturadoMes)}<div style="font-size:10px;color:var(--text3)">${pedMes.length} pedido${pedMes.length!==1?'s':''}</div></td>
+      <td style="font-family:var(--mono);color:var(--text3)">${fmt(c.valor_mensal)}</td>
       <td style="font-family:var(--mono)">${fmtDate(c.inicio)}</td>
       <td class="${renClass}" style="font-family:var(--mono)">${renIcon}${fmtDate(c.renovacao)}</td>
       <td>${esc(c.responsavel||'—')}</td>
@@ -1084,15 +1120,40 @@ function renderCarteira() {
 }
 
 function openClienteModal(id) {
-  if(!canEdit())return;
+  if(!canEdit()&&!id)return;
   const cli = id ? clientes.find(c=>c.id===id) : null;
   const isNew = !cli;
-  const d = cli||{nome:'',contato:'',whatsapp:'',email:'',segmento:'',servico:'',valor_mensal:'',valor_anual:'',contrato:'',inicio:today(),renovacao:'',responsavel:'',obs:''};
+  const d = cli||{nome:'',contato:'',whatsapp:'',email:'',segmento:'',servico:'',valor_mensal:'',valor_anual:'',contrato:'',tipo_valor:'fixo',inicio:today(),renovacao:'',responsavel:'',obs:''};
   const respOpts = ['',... (config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
   const contratoOpts = ['', ...CONTRATO_OPTS].map(o=>`<option value="${o}" ${d.contrato===o?'selected':''}>${o||'Selecionar...'}</option>`).join('');
+  const tipoOpts = ['fixo','variavel'].map(t=>`<option value="${t}" ${(d.tipo_valor||'fixo')===t?'selected':''}>${t==='fixo'?'Fixo (contrato mensal estável)':'Variável (demanda por análise)'}</option>`).join('');
+
+  // Pedidos do cliente
+  const cliPedidos = id ? pedidos.filter(p=>p.cliente_id==id).sort((a,b)=>(b.data||'').localeCompare(a.data||'')) : [];
+  const mesStr = today().substring(0,7);
+  const faturadoMes = cliPedidos.filter(p=>p.status==='concluido'&&(p.data||'').startsWith(mesStr)).reduce((s,p)=>s+Number(p.valor||0),0);
+
+  const pedidosHTML = !isNew ? `
+    <div class="modal-section" style="margin-top:20px">Pedidos / Análises</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:12px;color:var(--text3)">Faturado este mês: <b style="color:var(--green)">${fmt(faturadoMes)}</b></span>
+      ${canEdit()?`<button class="btn-add" style="font-size:12px;padding:5px 12px" onclick="openPedidoModal(${id},null)">+ Novo pedido</button>`:''}
+    </div>
+    ${cliPedidos.length===0?`<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhum pedido registrado ainda.</div>`:`
+    <table class="pedidos-table">
+      <thead><tr><th>Data</th><th>Serviço</th><th>Valor</th><th>Status</th>${canEdit()?'<th></th>':''}</tr></thead>
+      <tbody>${cliPedidos.map(p=>`<tr>
+        <td style="font-family:var(--mono)">${fmtDate(p.data)}</td>
+        <td>${esc(p.servico||'—')}</td>
+        <td style="font-family:var(--mono);font-weight:500">${fmt(p.valor)}</td>
+        <td><span class="status-badge status-${p.status||'aguardando'}">${p.status==='concluido'?'Concluído':p.status==='cancelado'?'Cancelado':'Aguardando'}</span></td>
+        ${canEdit()?`<td><button onclick="openPedidoModal(${id},${p.id})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 6px">✏</button></td>`:''}
+      </tr>`).join('')}</tbody>
+    </table>`}` : '';
+
   document.getElementById('modal-root').innerHTML = `
   <div class="overlay" id="overlay" onclick="closeOnBg(event)">
-    <div class="modal">
+    <div class="modal" style="width:600px">
       <div class="modal-hd"><div class="modal-title">${isNew?'Novo cliente':'Editar cliente'}</div><button class="btn-close" onclick="closeModal()">×</button></div>
       <div class="modal-section">Dados do cliente</div>
       <div class="form-grid">
@@ -1105,14 +1166,15 @@ function openClienteModal(id) {
       </div>
       <div class="modal-section">Contrato</div>
       <div class="form-grid">
-        <div class="field"><label>Valor mensal (R$)</label><input type="number" id="cf-val-mes" value="${d.valor_mensal||''}" placeholder="0" min="0"></div>
-        <div class="field"><label>Valor anual (R$)</label><input type="number" id="cf-val-ano" value="${d.valor_anual||''}" placeholder="0" min="0"></div>
+        <div class="field"><label>Tipo de valor</label><select id="cf-tipo">${tipoOpts}</select></div>
+        <div class="field"><label>Valor ref. mensal (R$)</label><input type="number" id="cf-val-mes" value="${d.valor_mensal||''}" placeholder="Estimativa" min="0"></div>
         <div class="field"><label>Tipo de contrato</label><select id="cf-contrato">${contratoOpts}</select></div>
         <div class="field"><label>Responsável</label><select id="cf-resp">${respOpts}</select></div>
         <div class="field"><label>Início do contrato</label><input type="date" id="cf-inicio" value="${esc(d.inicio)}"></div>
         <div class="field"><label>Data de renovação</label><input type="date" id="cf-renovacao" value="${esc(d.renovacao)}"></div>
         <div class="field full"><label>Observações</label><textarea id="cf-obs" placeholder="Notas sobre o cliente...">${esc(d.obs)}</textarea></div>
       </div>
+      ${pedidosHTML}
       <div class="modal-footer">
         ${!isNew?`<button class="btn-del" onclick="deleteCliente(${d.id})">Excluir</button>`:''}
         <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -1131,8 +1193,9 @@ function saveCliente(id) {
     email:document.getElementById('cf-email').value.trim(),
     segmento:document.getElementById('cf-segmento').value.trim(),
     servico:document.getElementById('cf-servico').value.trim(),
+    tipo_valor:document.getElementById('cf-tipo').value,
     valor_mensal:parseFloat(document.getElementById('cf-val-mes').value)||0,
-    valor_anual:parseFloat(document.getElementById('cf-val-ano').value)||0,
+    valor_anual:0,
     contrato:document.getElementById('cf-contrato').value,
     responsavel:document.getElementById('cf-resp').value,
     inicio:document.getElementById('cf-inicio').value,
@@ -1150,6 +1213,74 @@ function saveCliente(id) {
     toast('Cliente adicionado ✓');
   }
   saveClientes(); closeModal(); renderAll();
+}
+
+function openPedidoModal(clienteId, pedidoId) {
+  const ped = pedidoId ? pedidos.find(p=>p.id===pedidoId) : null;
+  const isNew = !ped;
+  const cli = clientes.find(c=>c.id===clienteId);
+  const d = ped||{data:today(),servico:cli?.servico||'',valor:'',status:'aguardando',obs:''};
+  const statusOpts = ['aguardando','concluido','cancelado'].map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s==='aguardando'?'Aguardando':s==='concluido'?'Concluído':'Cancelado'}</option>`).join('');
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="overlay" id="overlay" onclick="closeOnBg(event)">
+    <div class="modal" style="width:440px">
+      <div class="modal-hd">
+        <div>
+          <div class="modal-title">${isNew?'Novo pedido':'Editar pedido'}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${esc(cli?.nome||'')}</div>
+        </div>
+        <button class="btn-close" onclick="openClienteModal(${clienteId})">×</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Data</label><input type="date" id="pf-data" value="${esc(d.data)}"></div>
+        <div class="field"><label>Status</label><select id="pf-status">${statusOpts}</select></div>
+        <div class="field full"><label>Serviço / Análise</label><input type="text" id="pf-servico" value="${esc(d.servico)}" placeholder="Descreva o serviço solicitado"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" id="pf-valor" value="${d.valor||''}" placeholder="0" min="0"></div>
+        <div class="field full"><label>Observações</label><textarea id="pf-obs" placeholder="Notas sobre este pedido...">${esc(d.obs||'')}</textarea></div>
+      </div>
+      <div class="modal-footer">
+        ${!isNew?`<button class="btn-del" onclick="deletePedido(${pedidoId},${clienteId})">Excluir</button>`:''}
+        <button class="btn-cancel" onclick="openClienteModal(${clienteId})">Voltar</button>
+        <button class="btn-save" onclick="savePedido(${isNew?'null':pedidoId},${clienteId})">${isNew?'Adicionar':'Salvar'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function savePedido(pedidoId, clienteId) {
+  const cli = clientes.find(c=>c.id===clienteId);
+  const obj = {
+    cliente_id: clienteId,
+    cliente_nome: cli?.nome||'',
+    data: document.getElementById('pf-data').value,
+    servico: document.getElementById('pf-servico').value.trim(),
+    valor: parseFloat(document.getElementById('pf-valor').value)||0,
+    status: document.getElementById('pf-status').value,
+    obs: document.getElementById('pf-obs').value.trim(),
+  };
+  if(pedidoId){
+    const idx=pedidos.findIndex(p=>p.id===pedidoId);
+    pedidos[idx]={...pedidos[idx],...obj};
+    addHist('edit','Pedido: '+(cli?.nome||''),'Pedido atualizado — '+fmt(obj.valor));
+    toast('Pedido atualizado ✓');
+  } else {
+    pedidos.push({id:nextPedidoId++,...obj});
+    addHist('add','Pedido: '+(cli?.nome||''),'Novo pedido — '+fmt(obj.valor));
+    toast('Pedido adicionado ✓');
+  }
+  savePedidos();
+  openClienteModal(clienteId);
+  renderAll();
+}
+
+function deletePedido(pedidoId, clienteId) {
+  if(!confirm('Remover este pedido?'))return;
+  pedidos=pedidos.filter(p=>p.id!==pedidoId);
+  savePedidos();
+  openClienteModal(clienteId);
+  renderAll();
+  toast('Pedido removido');
 }
 
 function deleteCliente(id) {
