@@ -748,6 +748,30 @@ function daysDiff(d){if(!d)return null;const a=new Date(d),b=new Date();a.setHou
 function fmtDate(s){if(!s)return '—';const[y,m,d]=String(s).split('-');return `${d}/${m}/${y}`;}
 function fmtDT(s){if(!s)return '—';const d=new Date(s);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}
+// Normaliza qualquer formato de data para AAAA-MM-DD (necessário para input type="date")
+function toDateInput(s){
+  if(!s||s===''||s==='NaT'||s==='undefined'||s==='null'||s==='Invalid Date')return '';
+  const str=String(s).trim();
+  // Já está no formato correto AAAA-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  // Formato com hora: AAAA-MM-DDThh:mm:ss ou AAAA-MM-DD hh:mm:ss
+  if(/^\d{4}-\d{2}-\d{2}[T ]/.test(str))return str.substring(0,10);
+  // Formato DD/MM/AAAA
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(str)){const[d,m,y]=str.split('/');return `${y}-${m}-${d}`;}
+  // Formato DD-MM-AAAA
+  if(/^\d{2}-\d{2}-\d{4}$/.test(str)){const[d,m,y]=str.split('-');return `${y}-${m}-${d}`;}
+  // Formato do Sheets: "Mon Mar 16 2026 00:00:00 GMT..." ou "undefined/0300..."
+  if(str.includes('GMT')||str.includes('undefined/')){
+    try{
+      const dt=new Date(str.replace(/undefined\/\d+\s*\([^)]*\)/,'').trim());
+      if(!isNaN(dt))return dt.toISOString().split('T')[0];
+    }catch(e){}
+    return '';
+  }
+  // Tenta via Date() como último recurso
+  try{const dt=new Date(str);if(!isNaN(dt))return dt.toISOString().split('T')[0];}catch(e){}
+  return '';
+}
 function tempColor(t){if(!t)return{bg:'var(--gray-bg)',color:'var(--gray)'};const tl=t.toLowerCase();if(tl.includes('quente'))return{bg:'var(--red-bg)',color:'var(--red)'};if(tl.includes('morno'))return{bg:'var(--amber-bg)',color:'var(--amber)'};if(tl.includes('frio'))return{bg:'var(--blue-bg)',color:'var(--blue)'};return{bg:'var(--gray-bg)',color:'var(--gray)'};}
 function tempShort(t){if(!t)return '';const tl=t.toLowerCase();if(tl.includes('quente'))return '🔥 Quente';if(tl.includes('morno'))return '🌤 Morno';if(tl.includes('frio'))return '❄️ Frio';return t.split('(')[0].trim();}
 function canEdit(){return currentUser && currentUser.nivel !== 'visualizador';}
@@ -1111,7 +1135,7 @@ function renderCarteira() {
       <td>${esc(c.segmento||'—')}</td>
       <td>${esc(c.servico||'—')}</td>
       <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(faturadoMes)}<div style="font-size:10px;color:var(--text3)">${pedMes.length} pedido${pedMes.length!==1?'s':''}</div></td>
-      <td style="font-family:var(--mono);color:var(--text3)">${fmt(c.valor_mensal)}</td>
+      <td style="font-family:var(--mono);color:var(--text3)">${fmt(Number(c.valor_mensal)||0)}</td>
       <td style="font-family:var(--mono)">${fmtDate(c.inicio)}</td>
       <td class="${renClass}" style="font-family:var(--mono)">${renIcon}${fmtDate(c.renovacao)}</td>
       <td>${esc(c.responsavel||'—')}</td>
@@ -1121,7 +1145,8 @@ function renderCarteira() {
 
 function openClienteModal(id) {
   if(!canEdit()&&!id)return;
-  const cli = id ? clientes.find(c=>c.id===id) : null;
+  const numId = id ? Number(id) : null;
+  const cli = numId ? clientes.find(c=>Number(c.id)===numId) : null;
   const isNew = !cli;
   const d = cli||{nome:'',contato:'',whatsapp:'',email:'',segmento:'',servico:'',valor_mensal:'',valor_anual:'',contrato:'',tipo_valor:'fixo',inicio:today(),renovacao:'',responsavel:'',obs:''};
   const respOpts = ['',... (config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
@@ -1170,8 +1195,8 @@ function openClienteModal(id) {
         <div class="field"><label>Valor ref. mensal (R$)</label><input type="number" id="cf-val-mes" value="${d.valor_mensal||''}" placeholder="Estimativa" min="0"></div>
         <div class="field"><label>Tipo de contrato</label><select id="cf-contrato">${contratoOpts}</select></div>
         <div class="field"><label>Responsável</label><select id="cf-resp">${respOpts}</select></div>
-        <div class="field"><label>Início do contrato</label><input type="date" id="cf-inicio" value="${esc(d.inicio)}"></div>
-        <div class="field"><label>Data de renovação</label><input type="date" id="cf-renovacao" value="${esc(d.renovacao)}"></div>
+        <div class="field"><label>Início do contrato</label><input type="date" id="cf-inicio" value="${toDateInput(d.inicio)}"></div>
+        <div class="field"><label>Data de renovação</label><input type="date" id="cf-renovacao" value="${toDateInput(d.renovacao)}"></div>
         <div class="field full"><label>Observações</label><textarea id="cf-obs" placeholder="Notas sobre o cliente...">${esc(d.obs)}</textarea></div>
       </div>
       ${pedidosHTML}
@@ -1202,8 +1227,9 @@ function saveCliente(id) {
     renovacao:document.getElementById('cf-renovacao').value,
     obs:document.getElementById('cf-obs').value.trim(),
   };
-  if(id){
-    const idx=clientes.findIndex(c=>c.id===id);
+  if(id && id !== 'null'){
+    const numId = Number(id);
+    const idx=clientes.findIndex(c=>Number(c.id)===numId);
     clientes[idx]={...clientes[idx],...obj};
     addHist('edit','Cliente: '+nome,'Dados atualizados');
     toast('Cliente atualizado ✓');
@@ -1216,7 +1242,7 @@ function saveCliente(id) {
 }
 
 function openPedidoModal(clienteId, pedidoId) {
-  const ped = pedidoId ? pedidos.find(p=>p.id===pedidoId) : null;
+  const ped = pedidoId ? pedidos.find(p=>Number(p.id)===Number(pedidoId)) : null;
   const isNew = !ped;
   const cli = clientes.find(c=>c.id===clienteId);
   const d = ped||{data:today(),servico:cli?.servico||'',valor:'',status:'aguardando',obs:''};
@@ -1233,7 +1259,7 @@ function openPedidoModal(clienteId, pedidoId) {
         <button class="btn-close" onclick="openClienteModal(${clienteId})">×</button>
       </div>
       <div class="form-grid">
-        <div class="field"><label>Data</label><input type="date" id="pf-data" value="${esc(d.data)}"></div>
+        <div class="field"><label>Data</label><input type="date" id="pf-data" value="${toDateInput(d.data)}"></div>
         <div class="field"><label>Status</label><select id="pf-status">${statusOpts}</select></div>
         <div class="field full"><label>Serviço / Análise</label><input type="text" id="pf-servico" value="${esc(d.servico)}" placeholder="Descreva o serviço solicitado"></div>
         <div class="field"><label>Valor (R$)</label><input type="number" id="pf-valor" value="${d.valor||''}" placeholder="0" min="0"></div>
@@ -1259,8 +1285,9 @@ function savePedido(pedidoId, clienteId) {
     status: document.getElementById('pf-status').value,
     obs: document.getElementById('pf-obs').value.trim(),
   };
-  if(pedidoId){
-    const idx=pedidos.findIndex(p=>p.id===pedidoId);
+  if(pedidoId && pedidoId !== 'null'){
+    const numId = Number(pedidoId);
+    const idx=pedidos.findIndex(p=>Number(p.id)===numId);
     pedidos[idx]={...pedidos[idx],...obj};
     addHist('edit','Pedido: '+(cli?.nome||''),'Pedido atualizado — '+fmt(obj.valor));
     toast('Pedido atualizado ✓');
@@ -1276,7 +1303,7 @@ function savePedido(pedidoId, clienteId) {
 
 function deletePedido(pedidoId, clienteId) {
   if(!confirm('Remover este pedido?'))return;
-  pedidos=pedidos.filter(p=>p.id!==pedidoId);
+  pedidos=pedidos.filter(p=>Number(p.id)!==Number(pedidoId));
   savePedidos();
   openClienteModal(clienteId);
   renderAll();
@@ -1284,9 +1311,10 @@ function deletePedido(pedidoId, clienteId) {
 }
 
 function deleteCliente(id) {
-  const c = clientes.find(x=>x.id===id);
+  const numId = Number(id);
+  const c = clientes.find(x=>Number(x.id)===numId);
   if(!confirm('Remover este cliente?'))return;
-  clientes = clientes.filter(x=>x.id!==id);
+  clientes = clientes.filter(x=>Number(x.id)!==numId);
   addHist('hist-delete','Cliente: '+(c?.nome||id),'Removido');
   saveClientes(); closeModal(); renderAll(); toast('Cliente removido');
 }
@@ -1434,7 +1462,8 @@ function saveMetasCfg() {
 // ═══════════════════════════════════════════
 function openModal(id) {
   if(!canEdit()&&!id)return;
-  const lead=id?leads.find(l=>l.id===id):null;
+  const numId = id ? Number(id) : null;
+  const lead = numId ? leads.find(l => Number(l.id) === numId) : null;
   const isNew=!lead;
   if(!canEdit()&&isNew)return;
   const d=lead||{data_lead:today(),id_lead:'',empresa:'',cidade:'',estado:'SC',cnpj:'',segmento:'',origem:'',contato_nome:'',contato_cargo:'',whatsapp:'',email:'',responsavel:currentUser?.nome||'',stage:'prospeccao',temperatura:'',servico:'',valor:'',data_ultimo_contato:today(),proxima_acao:'',data_followup:'',previsao_fechamento:'',motivo_perda:'',obs:''};
@@ -1445,6 +1474,8 @@ function openModal(id) {
   const origemOpts=['', ...ORIGEM_OPTS].map(o=>`<option value="${esc(o)}" ${d.origem===o?'selected':''}>${esc(o)||'Selecionar...'}</option>`).join('');
   const cargoOpts=['', ...CARGO_OPTS].map(c=>`<option value="${esc(c)}" ${d.contato_cargo===c?'selected':''}>${esc(c)||'Selecionar...'}</option>`).join('');
   const respOpts=['', ...(config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
+  const servicoOpts=['', ...(config.servicos||[])].map(s=>`<option value="${esc(s)}" ${d.servico===s?'selected':''}>${esc(s)||'Selecionar...'}</option>`).join('');
+  const segmentoOpts=['', ...(config.segmentos||[])].map(s=>`<option value="${esc(s)}" ${d.segmento===s?'selected':''}>${esc(s)||'Selecionar...'}</option>`).join('');
   const ro=readonly?'disabled':'';
   document.getElementById('modal-root').innerHTML=`
   <div class="overlay" id="overlay" onclick="closeOnBg(event)">
@@ -1452,13 +1483,13 @@ function openModal(id) {
       <div class="modal-hd"><div class="modal-title">${isNew?'Novo lead':readonly?'Visualizar lead':'Editar lead'}</div><button class="btn-close" onclick="closeModal()">×</button></div>
       <div class="modal-section">Dados da empresa</div>
       <div class="form-grid">
-        <div class="field"><label>Data do lead</label><input type="date" id="f-data_lead" value="${esc(d.data_lead)}" ${ro}></div>
+        <div class="field"><label>Data do lead</label><input type="date" id="f-data_lead" value="${toDateInput(d.data_lead)}" ${ro}></div>
         <div class="field"><label>ID do lead</label><input type="text" id="f-id_lead" value="${esc(d.id_lead)}" placeholder="Ex: 001" ${ro}></div>
         <div class="field full"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa" ${ro}></div>
         <div class="field"><label>Cidade</label><input type="text" id="f-cidade" value="${esc(d.cidade)}" placeholder="Cidade" ${ro}></div>
         <div class="field"><label>Estado (UF)</label><input type="text" id="f-estado" value="${esc(d.estado)}" placeholder="SC" maxlength="2" style="text-transform:uppercase" ${ro}></div>
         <div class="field"><label>CNPJ / CPF</label><input type="text" id="f-cnpj" value="${esc(d.cnpj)}" placeholder="xx.xxx.xxx/0001-xx" ${ro}></div>
-        <div class="field"><label>Segmento</label><input type="text" id="f-segmento" value="${esc(d.segmento)}" placeholder="Ex: Indústria de alimentos" ${ro}></div>
+        <div class="field"><label>Segmento</label><select id="f-segmento" ${ro}>${segmentoOpts}</select></div>
         <div class="field"><label>Origem</label><select id="f-origem" ${ro}>${origemOpts}</select></div>
       </div>
       <div class="modal-section">Contato</div>
@@ -1473,15 +1504,15 @@ function openModal(id) {
         <div class="field"><label>Responsável</label><select id="f-responsavel" ${ro}>${respOpts}</select></div>
         <div class="field"><label>Etapa do pipeline</label><select id="f-stage" ${ro}>${stageOpts}</select></div>
         <div class="field"><label>Temperatura</label><select id="f-temperatura" ${ro}>${tempOpts}</select></div>
-        <div class="field"><label>Serviço de interesse</label><input type="text" id="f-servico" value="${esc(d.servico)}" placeholder="Ex: Microbiologia de alimentos" ${ro}></div>
+        <div class="field"><label>Serviço de interesse</label><select id="f-servico" ${ro}>${servicoOpts}</select></div>
         <div class="field"><label>Valor potencial (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0" ${ro}></div>
-        <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${esc(d.previsao_fechamento)}" ${ro}></div>
+        <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${toDateInput(d.previsao_fechamento)}" ${ro}></div>
       </div>
       <div class="modal-section">Follow-up</div>
       <div class="form-grid">
-        <div class="field"><label>Data último contato</label><input type="date" id="f-data_ultimo_contato" value="${esc(d.data_ultimo_contato)}" ${ro}></div>
+        <div class="field"><label>Data último contato</label><input type="date" id="f-data_ultimo_contato" value="${toDateInput(d.data_ultimo_contato)}" ${ro}></div>
         <div class="field"><label>Próxima ação</label><select id="f-proxima_acao" ${ro}>${acaoOpts}</select></div>
-        <div class="field"><label>Data próximo follow-up</label><input type="date" id="f-data_followup" value="${esc(d.data_followup)}" ${ro}></div>
+        <div class="field"><label>Data próximo follow-up</label><input type="date" id="f-data_followup" value="${toDateInput(d.data_followup)}" ${ro}></div>
         <div class="field"><label>Motivo de perda</label><input type="text" id="f-motivo_perda" value="${esc(d.motivo_perda)}" placeholder="Preencher se perdido" ${ro}></div>
         <div class="field full"><label>Observações</label><textarea id="f-obs" placeholder="Contexto, histórico, próximos passos..." ${ro}>${esc(d.obs)}</textarea></div>
       </div>
@@ -1515,14 +1546,15 @@ function saveLead(id) {
   const empresa=document.getElementById('f-empresa').value.trim();
   const contato=document.getElementById('f-contato_nome').value.trim();
   if(!empresa&&!contato){alert('Informe o nome da empresa ou do contato.');return;}
-  const prevStage = id ? leads.find(l=>l.id===id)?.stage : null;
+  const numId = id && id !== 'null' ? Number(id) : null;
+  const prevStage = numId ? leads.find(l=>Number(l.id)===numId)?.stage : null;
   const obj={
     data_lead:document.getElementById('f-data_lead').value,
     id_lead:document.getElementById('f-id_lead').value.trim(),
     empresa, cidade:document.getElementById('f-cidade').value.trim(),
     estado:document.getElementById('f-estado').value.trim().toUpperCase(),
     cnpj:document.getElementById('f-cnpj').value.trim(),
-    segmento:document.getElementById('f-segmento').value.trim(),
+    segmento:document.getElementById('f-segmento').value,
     origem:document.getElementById('f-origem').value,
     contato_nome:contato,
     contato_cargo:document.getElementById('f-contato_cargo').value,
@@ -1531,7 +1563,7 @@ function saveLead(id) {
     responsavel:document.getElementById('f-responsavel').value,
     stage:document.getElementById('f-stage').value,
     temperatura:document.getElementById('f-temperatura').value,
-    servico:document.getElementById('f-servico').value.trim(),
+    servico:document.getElementById('f-servico').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     data_ultimo_contato:document.getElementById('f-data_ultimo_contato').value,
     proxima_acao:document.getElementById('f-proxima_acao').value,
@@ -1541,8 +1573,8 @@ function saveLead(id) {
     obs:document.getElementById('f-obs').value.trim(),
   };
   const entidade = empresa||contato;
-  if(id){
-    const idx=leads.findIndex(l=>l.id===id);
+  if(numId){
+    const idx=leads.findIndex(l=>Number(l.id)===numId);
     leads[idx]={...leads[idx],...obj};
     if(prevStage!==obj.stage){
       const stLabel=STAGES.find(s=>s.id===obj.stage)?.label||obj.stage;
@@ -1560,9 +1592,10 @@ function saveLead(id) {
 }
 
 function deleteLead(id) {
-  const l=leads.find(x=>x.id===id);
+  const numId = Number(id);
+  const l=leads.find(x=>Number(x.id)===numId);
   if(!confirm('Remover este lead permanentemente?'))return;
-  leads=leads.filter(x=>x.id!==id);
+  leads=leads.filter(x=>Number(x.id)!==numId);
   addHist('hist-delete','Lead: '+(l?.empresa||l?.contato_nome||id),'Removido');
   saveLeads(); closeModal(); renderAll(); toast('Lead removido');
 }
