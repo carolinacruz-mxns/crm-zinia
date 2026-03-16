@@ -375,16 +375,29 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
 <!-- CARTEIRA -->
 <div class="view" id="view-carteira">
   <div class="carteira-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Período</label>
+        <select class="filter-select" id="carteira-mes" onchange="renderCarteira()" style="font-family:var(--mono);font-size:13px;"></select>
+        <span id="carteira-resp-wrap" style="display:none;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Responsável</label>
+          <select class="filter-select" id="carteira-resp" onchange="renderCarteira()"><option value="">Todos</option></select>
+        </span>
+      </div>
+    </div>
     <div class="carteira-stats" id="carteira-stats"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="section-title" style="margin:0">Contratos ativos</div>
-      <button class="btn-primary" onclick="openClienteModal(null)" id="btn-novo-cliente">+ Novo cliente</button>
+      <div class="section-title" style="margin:0" id="carteira-table-title">Contratos ativos</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-cancel" id="btn-voltar-carteira" onclick="voltarCarteira()" style="display:none;font-size:12px;">← Voltar</button>
+        <button class="btn-primary" onclick="openClienteModal(null)" id="btn-novo-cliente">+ Novo cliente</button>
+      </div>
     </div>
     <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);">
       <table class="cliente-table" id="cliente-table">
-        <thead><tr>
-          <th>Cliente</th><th>Segmento</th><th>Serviço</th><th>Valor mensal</th>
-          <th>Valor anual</th><th>Início</th><th>Renovação</th><th>Responsável</th>
+        <thead id="cliente-thead"><tr>
+          <th>Cliente</th><th>Segmento</th><th>Serviço</th><th>Ref. mensal</th>
+          <th>Faturado mês</th><th>Início</th><th>Renovação</th><th>Responsável</th>
         </tr></thead>
         <tbody id="cliente-tbody"></tbody>
       </table>
@@ -779,14 +792,6 @@ function canEdit(){return currentUser && currentUser.nivel !== 'visualizador';}
 // ═══════════════════════════════════════════
 // SWITCH VIEW
 // ═══════════════════════════════════════════
-function switchView(id, btn) {
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('view-'+id).classList.add('active');
-  if(btn)btn.classList.add('active');
-  currentView = id;
-  renderAll();
-}
 
 function renderAll() {
   setupFilters();
@@ -1094,30 +1099,151 @@ function renderMetas() {
 // ═══════════════════════════════════════════
 // CARTEIRA DE CLIENTES
 // ═══════════════════════════════════════════
+let carteiraFiltro = null;
+
+function switchView(id, btn) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id !== 'carteira') carteiraFiltro = null;
+  currentView = id;
+  renderAll();
+}
+
+function setupCarteiraMes() {
+  const sel = document.getElementById('carteira-mes');
+  if (!sel) return;
+  const cur = sel.value;
+  const meses = [...new Set(pedidos.map(p=>(p.data||'').substring(0,7)).filter(m=>m&&m.length===7))].sort().reverse();
+  const todayMes = today().substring(0,7);
+  if (!meses.includes(todayMes)) meses.unshift(todayMes);
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  sel.innerHTML = meses.map(m => {
+    const [y, mo] = m.split('-');
+    return `<option value="${m}">${nomes[parseInt(mo)-1]}/${y}</option>`;
+  }).join('');
+  if (cur && meses.includes(cur)) sel.value = cur;
+
+  // Show responsavel filter for admins
+  const wrap = document.getElementById('carteira-resp-wrap');
+  const respSel = document.getElementById('carteira-resp');
+  if (currentUser && currentUser.nivel === 'admin') {
+    wrap.style.display = 'flex';
+    const curResp = respSel.value;
+    const resps = [...new Set(clientes.map(c=>c.responsavel).filter(Boolean))].sort();
+    respSel.innerHTML = '<option value="">Todos</option>' + resps.map(r=>`<option value="${r}">${r}</option>`).join('');
+    if (curResp) respSel.value = curResp;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function voltarCarteira() {
+  carteiraFiltro = null;
+  document.getElementById('btn-voltar-carteira').style.display = 'none';
+  document.getElementById('carteira-table-title').textContent = 'Contratos ativos';
+  document.getElementById('cliente-thead').innerHTML = `<tr>
+    <th>Cliente</th><th>Segmento</th><th>Serviço</th><th>Ref. mensal</th>
+    <th>Faturado mês</th><th>Início</th><th>Renovação</th><th>Responsável</th>
+  </tr>`;
+  renderCarteiraTabela();
+}
+
+function filtrarCarteiraPor(tipo) {
+  carteiraFiltro = tipo;
+  document.getElementById('btn-voltar-carteira').style.display = 'inline-block';
+  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
+  const [y, mo] = mesStr.split('-');
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mesLabel = `${nomes[parseInt(mo)-1]}/${y}`;
+  const titulo = tipo==='faturado' ? `Pedidos concluídos — ${mesLabel}` :
+                 tipo==='aguardando' ? `Pedidos aguardando — ${mesLabel}` :
+                 `Todos os pedidos — ${mesLabel}`;
+  document.getElementById('carteira-table-title').textContent = titulo;
+  document.getElementById('cliente-thead').innerHTML = `<tr>
+    <th>Cliente</th><th>Proposta / Coleta</th><th>Serviço</th><th>Valor</th><th>Status</th>
+  </tr>`;
+  renderCarteiraTabela();
+}
+
 function renderCarteira() {
-  const mesStr = today().substring(0,7);
-  const receitaMesReal = pedidos
-    .filter(p=>p.status==='concluido'&&(p.data||'').startsWith(mesStr))
-    .reduce((s,p)=>s+Number(p.valor||0),0);
-  const totalAnual = clientes.reduce((s,c)=>s+Number(c.valor_anual||0),0);
-  const alertas = clientes.filter(c=>{
+  setupCarteiraMes();
+  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
+  const filtResp = currentUser?.nivel==='admin' ? (document.getElementById('carteira-resp')?.value||'') : (currentUser?.nome||'');
+
+  const clientesFiltrados = filtResp
+    ? clientes.filter(c=>c.responsavel===filtResp)
+    : (currentUser?.nivel==='vendedor' ? clientes.filter(c=>c.responsavel===currentUser.nome) : clientes);
+
+  const idsFiltrados = new Set(clientesFiltrados.map(c=>String(c.id)));
+  const pedMes = pedidos.filter(p=>(p.data||'').startsWith(mesStr)&&(filtResp?idsFiltrados.has(String(p.cliente_id)):true));
+  const receitaMes = pedMes.filter(p=>p.status==='concluido').reduce((s,p)=>s+Number(p.valor||0),0);
+  const totalPed = pedMes.length;
+  const aguardando = pedMes.filter(p=>p.status==='aguardando').length;
+  const alertas = clientesFiltrados.filter(c=>{
     if(!c.renovacao)return false;
     const d=daysDiff(c.renovacao);
     return d!==null&&d>=-30&&d<=0;
   }).length;
 
   document.getElementById('carteira-stats').innerHTML = `
-    <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${clientes.length}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Faturado este mês</div><div class="c-kpi-value" style="font-size:18px">${fmt(receitaMesReal)}</div><div class="c-kpi-sub">pedidos concluídos</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Total pedidos mês</div><div class="c-kpi-value">${pedidos.filter(p=>(p.data||'').startsWith(mesStr)).length}</div><div class="c-kpi-sub">${pedidos.filter(p=>(p.data||'').startsWith(mesStr)&&p.status==='aguardando').length} aguardando</div></div>
+    <div class="c-kpi" style="cursor:pointer" onclick="filtrarCarteiraPor('faturado')">
+      <div class="c-kpi-label">Faturado este mês</div>
+      <div class="c-kpi-value" style="font-size:18px">${fmt(receitaMes)}</div>
+      <div class="c-kpi-sub" style="color:var(--blue)">ver pedidos →</div>
+    </div>
+    <div class="c-kpi" style="cursor:pointer" onclick="filtrarCarteiraPor('todos')">
+      <div class="c-kpi-label">Total pedidos mês</div>
+      <div class="c-kpi-value">${totalPed}</div>
+      <div class="c-kpi-sub" style="color:var(--blue)">${aguardando} aguardando →</div>
+    </div>
+    <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${clientesFiltrados.length}</div></div>
     <div class="c-kpi"><div class="c-kpi-label">Renovações próximas</div><div class="c-kpi-value" style="color:${alertas>0?'var(--amber)':'var(--text)'}">${alertas}</div><div class="c-kpi-sub">próximos 30 dias</div></div>`;
 
+  renderCarteiraTabela();
+}
+
+function renderCarteiraTabela() {
+  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
+  const filtResp = currentUser?.nivel==='admin' ? (document.getElementById('carteira-resp')?.value||'') : (currentUser?.nome||'');
+  const clientesFiltrados = filtResp
+    ? clientes.filter(c=>c.responsavel===filtResp)
+    : (currentUser?.nivel==='vendedor' ? clientes.filter(c=>c.responsavel===currentUser.nome) : clientes);
+  const idsFiltrados = new Set(clientesFiltrados.map(c=>String(c.id)));
   const tbody = document.getElementById('cliente-tbody');
-  if(!clientes.length){
-    tbody.innerHTML='<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum cliente cadastrado. Leads fechados podem ser convertidos em clientes.</td></tr>';
+
+  if (carteiraFiltro) {
+    const pedMes = pedidos.filter(p=>{
+      if (!(p.data||'').startsWith(mesStr)) return false;
+      if (!idsFiltrados.has(String(p.cliente_id)) && filtResp) return false;
+      if (carteiraFiltro==='faturado') return p.status==='concluido';
+      if (carteiraFiltro==='aguardando') return p.status==='aguardando';
+      return true;
+    });
+    if (!pedMes.length) {
+      tbody.innerHTML=`<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum pedido encontrado.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = pedMes.map(p=>{
+      const statusClass = p.status==='concluido'?'status-concluido':p.status==='cancelado'?'status-cancelado':'status-aguardando';
+      const statusLabel = p.status==='concluido'?'Concluído':p.status==='cancelado'?'Cancelado':'Aguardando';
+      return `<tr onclick="openClienteModal(${p.cliente_id})">
+        <td><div style="font-size:13px;font-weight:600;color:var(--text)">${esc(p.cliente_nome||'—')}</div></td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${esc(p.obs||'—')}</td>
+        <td>${esc(p.servico||'—')}</td>
+        <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(Number(p.valor)||0)}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      </tr>`;
+    }).join('');
     return;
   }
-  tbody.innerHTML = clientes.map(c=>{
+
+  if (!clientesFiltrados.length) {
+    tbody.innerHTML='<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum cliente encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = clientesFiltrados.map(c=>{
     const diasRen=daysDiff(c.renovacao);
     let renClass='',renIcon='';
     if(diasRen!==null){
@@ -1134,8 +1260,8 @@ function renderCarteira() {
       <td><div class="lead-name" style="font-size:13px;font-weight:600;color:var(--text)">${esc(c.nome)}</div><div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:2px">${esc(c.contato||'')} ${tipoTag}</div></td>
       <td>${esc(c.segmento||'—')}</td>
       <td>${esc(c.servico||'—')}</td>
+      <td style="font-family:var(--mono);font-weight:500;color:var(--text)">${fmt(Number(c.valor_mensal)||0)}<div style="font-size:10px;color:var(--text3)">ref. mensal</div></td>
       <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(faturadoMes)}<div style="font-size:10px;color:var(--text3)">${pedMes.length} pedido${pedMes.length!==1?'s':''}</div></td>
-      <td style="font-family:var(--mono);color:var(--text3)">${fmt(Number(c.valor_mensal)||0)}</td>
       <td style="font-family:var(--mono)">${fmtDate(c.inicio)}</td>
       <td class="${renClass}" style="font-family:var(--mono)">${renIcon}${fmtDate(c.renovacao)}</td>
       <td>${esc(c.responsavel||'—')}</td>
