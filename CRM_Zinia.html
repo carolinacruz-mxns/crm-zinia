@@ -532,6 +532,8 @@ let listSort = {col:'data_lead',dir:-1};
 let metaPeriod = 'dia';
 let currentUser = null;
 let isSyncing = false;
+let dataReady = false;       // true apenas após carregar dados do Sheets com sucesso
+let leadsLoadedCount = 0;    // quantos leads vieram do Sheets no último carregamento
 
 // ═══════════════════════════════════════════
 // LOGIN
@@ -648,6 +650,8 @@ async function initCloud() {
     historico = hi.historico || [];
     pedidos = pd.pedidos || [];
     nextPedidoId = pd.nextId || (pedidos.reduce((m,p) => Math.max(m,p.id),0)+1);
+    dataReady = true;
+    leadsLoadedCount = leads.length;
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
     setInterval(autoRefresh, 30000);
@@ -675,17 +679,36 @@ async function autoRefresh() {
     historico = hi.historico || [];
     pedidos = pd.pedidos || [];
     nextPedidoId = pd.nextId || (pedidos.reduce((m,p)=>Math.max(m,p.id),0)+1);
+    leadsLoadedCount = leads.length;
     showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
     renderAll();
   } catch(e) {}
 }
 
 async function saveLeads() {
+  // Proteção contra apagamento acidental
+  if (!dataReady) {
+    console.warn('saveLeads bloqueado: dados ainda não carregaram do Sheets.');
+    return;
+  }
+  if (leadsLoadedCount > 3 && leads.length < leadsLoadedCount * 0.7) {
+    const diff = leadsLoadedCount - leads.length;
+    const ok = confirm(
+      `⚠️ Atenção: você está prestes a salvar ${leads.length} lead(s), mas havia ${leadsLoadedCount} carregados.\n\n` +
+      `Isso removeria ${diff} lead(s) da planilha.\n\n` +
+      `Confirma que deseja continuar?`
+    );
+    if (!ok) {
+      showSyncStatus('✗ Salvo cancelado pelo usuário', 'var(--red)');
+      return;
+    }
+  }
   isSyncing = true;
   showSyncStatus('🔄 Salvando...', 'var(--amber)');
   localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
   try {
     await sheetsPost('saveLeads', {leads, nextId});
+    leadsLoadedCount = leads.length;
     showSyncStatus('✓ Salvo ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
   } catch(e) { showSyncStatus('⚠ Salvo localmente', 'var(--amber)'); }
   isSyncing = false;
