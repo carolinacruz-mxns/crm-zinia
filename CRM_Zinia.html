@@ -62,7 +62,13 @@ button,input,select,textarea{font-family:var(--font);}
 .view.active{display:block;}
 
 /* KANBAN */
-.board{display:flex;gap:0;overflow-x:auto;padding:16px 12px 32px;min-height:calc(100vh - 52px);align-items:flex-start;}
+.board-wrap{position:relative;}
+.board-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:90;width:36px;height:64px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);box-shadow:0 2px 8px rgba(0,0,0,.10);transition:opacity .15s,background .13s;opacity:0;pointer-events:none;}
+.board-arrow.visible{opacity:1;pointer-events:auto;}
+.board-arrow:hover{background:var(--surface2);color:var(--text);}
+.board-arrow-left{left:6px;}
+.board-arrow-right{right:6px;}
+.board{display:flex;gap:0;overflow-x:auto;padding:16px 44px 32px;min-height:calc(100vh - 52px);align-items:flex-start;scroll-behavior:smooth;}
 .board::-webkit-scrollbar{height:5px;}
 .board::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .col{min-width:228px;max-width:228px;margin:0 6px;}
@@ -333,7 +339,11 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
     <select class="filter-select" id="fil-temp" onchange="renderAll()"><option value="">Toda temperatura</option></select>
     <select class="filter-select" id="fil-serv" onchange="renderAll()"><option value="">Todos serviços</option></select>
   </div>
-  <div class="board" id="board"></div>
+  <div class="board-wrap">
+    <button class="board-arrow board-arrow-left" id="board-arrow-left" onclick="boardScroll(-1)">‹</button>
+    <div class="board" id="board"></div>
+    <button class="board-arrow board-arrow-right" id="board-arrow-right" onclick="boardScroll(1)">›</button>
+  </div>
 </div>
 
 <!-- LISTA -->
@@ -907,6 +917,8 @@ function renderKanban() {
     <div class="col-body">${items.length===0?'<div class="card-empty">Sem leads</div>':items.map(l=>cardHTML(l,st)).join('')}</div>`;
     board.appendChild(col);
   });
+  initBoardArrows();
+  setTimeout(updateBoardArrows, 50);
 }
 
 function cardHTML(l, st) {
@@ -1747,6 +1759,34 @@ function deleteLead(id) {
   leads=leads.filter(x=>Number(x.id)!==numId);
   addHist('hist-delete','Lead: '+(l?.empresa||l?.contato_nome||id),'Removido');
   saveLeads(); closeModal(); renderAll(); toast('Lead removido');
+}
+
+// ═══════════════════════════════════════════
+// BOARD SCROLL ARROWS
+// ═══════════════════════════════════════════
+function boardScroll(dir) {
+  const board = document.getElementById('board');
+  if (!board) return;
+  board.scrollBy({ left: dir * 280, behavior: 'smooth' });
+}
+
+function updateBoardArrows() {
+  const board = document.getElementById('board');
+  const left = document.getElementById('board-arrow-left');
+  const right = document.getElementById('board-arrow-right');
+  if (!board || !left || !right) return;
+  const canLeft = board.scrollLeft > 10;
+  const canRight = board.scrollLeft < board.scrollWidth - board.clientWidth - 10;
+  left.classList.toggle('visible', canLeft);
+  right.classList.toggle('visible', canRight);
+}
+
+// Inicializa listener de scroll no board ao entrar na view kanban
+function initBoardArrows() {
+  const board = document.getElementById('board');
+  if (!board || board._arrowListenerSet) return;
+  board.addEventListener('scroll', updateBoardArrows, { passive: true });
+  board._arrowListenerSet = true;
 }
 
 // Start — iniciado pelo login
