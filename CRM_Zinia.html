@@ -7,14 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#F6F5F1;--surface:#FFF;--surface2:#F0EEE9;--border:#E3E0D8;--border2:#C8C4BA;
-  --text:#1C1A16;--text2:#5C5A52;--text3:#9C9A90;
+  --bg:#F0F4F8;--surface:#FFF;--surface2:#E8EDF3;--border:#D0D9E4;--border2:#A8B8CC;
+  --text:#1A2637;--text2:#4A5A72;--text3:#8A9BB2;
   --green:#166534;--green-bg:#DCFCE7;--green-border:#86EFAC;
   --blue:#1447A0;--blue-bg:#DBEAFE;--blue-border:#93C5FD;
   --amber:#92400E;--amber-bg:#FEF3C7;--amber-border:#FCD34D;
   --red:#991B1B;--red-bg:#FEE2E2;--red-border:#FCA5A5;
   --purple:#5B21B6;--purple-bg:#EDE9FE;--purple-border:#C4B5FD;
   --teal:#115E59;--teal-bg:#CCFBF1;
+  --accent:#1447A0;--accent-light:#DBEAFE;--accent-mid:#3B6BC7;
   --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
   --r:10px;--r-sm:6px;--r-lg:14px;
 }
@@ -31,14 +32,14 @@ button,input,select,textarea{font-family:var(--font);}
 .login-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:block;margin-bottom:5px;}
 .login-input{width:100%;font-size:14px;padding:10px 13px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);outline:none;font-family:var(--font);transition:border-color .13s;}
 .login-input:focus{border-color:var(--border2);background:var(--surface);}
-.login-btn{width:100%;font-size:14px;font-weight:600;padding:11px;border-radius:var(--r-sm);background:var(--text);color:#fff;border:none;cursor:pointer;transition:opacity .13s;margin-top:4px;}
-.login-btn:hover{opacity:.82;}
+.login-btn{width:100%;font-size:14px;font-weight:600;padding:11px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;transition:opacity .13s;margin-top:4px;}
+.login-btn:hover{opacity:.85;}
 .login-error{font-size:12px;color:var(--red);margin-top:10px;min-height:18px;}
 
 /* NAV */
-.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;position:sticky;top:0;z-index:100;gap:12px;}
-.nav-brand{font-size:15px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;display:flex;align-items:center;gap:8px;}
-.nav-brand-dot{width:8px;height:8px;border-radius:50%;background:var(--text);}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;position:sticky;top:0;z-index:100;gap:12px;box-shadow:0 1px 4px rgba(20,71,160,.06);}
+.nav-brand{font-size:15px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;display:flex;align-items:center;gap:8px;color:var(--accent);}
+.nav-brand-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
 .nav-user{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;}
 .nav-user-name{font-weight:500;color:var(--text2);}
 .nav-user-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
@@ -47,13 +48,13 @@ button,input,select,textarea{font-family:var(--font);}
 .badge-visualizador{background:var(--amber-bg);color:var(--amber);}
 .nav-tabs{display:flex;gap:2px;}
 .tab{font-size:13px;font-weight:500;padding:6px 14px;border-radius:var(--r-sm);border:none;background:none;cursor:pointer;color:var(--text2);transition:all .15s;}
-.tab:hover{background:var(--surface2);color:var(--text);}
-.tab.active{background:var(--text);color:#fff;}
+.tab:hover{background:var(--accent-light);color:var(--accent);}
+.tab.active{background:var(--accent);color:#fff;}
 .nav-right{display:flex;gap:8px;align-items:center;flex-shrink:0;}
 .search{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);width:180px;outline:none;transition:all .15s;}
-.search:focus{border-color:var(--border2);background:var(--surface);}
-.btn-primary{font-size:13px;font-weight:600;padding:7px 16px;border-radius:var(--r-sm);background:var(--text);color:#fff;border:none;cursor:pointer;transition:opacity .15s;white-space:nowrap;}
-.btn-primary:hover{opacity:.82;}
+.search:focus{border-color:var(--accent);background:var(--surface);}
+.btn-primary{font-size:13px;font-weight:600;padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;transition:opacity .15s;white-space:nowrap;}
+.btn-primary:hover{opacity:.85;}
 .btn-logout{font-size:12px;padding:5px 10px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);color:var(--text3);cursor:pointer;}
 .btn-logout:hover{background:var(--surface2);}
 
@@ -223,7 +224,7 @@ button,input,select,textarea{font-family:var(--font);}
 .tag-add-row{display:flex;gap:8px;}
 .tag-input{font-size:13px;padding:7px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);outline:none;flex:1;}
 .tag-input:focus{border-color:var(--border2);background:var(--surface);}
-.btn-add{font-size:13px;font-weight:600;padding:7px 16px;border-radius:var(--r-sm);background:var(--text);color:#fff;border:none;cursor:pointer;white-space:nowrap;}
+.btn-add{font-size:13px;font-weight:600;padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;white-space:nowrap;}
 .btn-add:hover{opacity:.82;}
 .meta-cfg-table{width:100%;border-collapse:collapse;margin-top:4px;}
 .meta-cfg-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:8px 10px;background:var(--surface2);border-bottom:1px solid var(--border);text-align:left;}
@@ -282,7 +283,7 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
 .btn-del:hover{border-color:var(--red-border);color:var(--red);}
 .btn-cancel{font-size:13px;padding:8px 16px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer;}
 .btn-cancel:hover{background:var(--surface2);}
-.btn-save{font-size:13px;font-weight:600;padding:8px 22px;border-radius:var(--r-sm);background:var(--text);color:#fff;border:none;cursor:pointer;transition:opacity .13s;}
+.btn-save{font-size:13px;font-weight:600;padding:8px 22px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;transition:opacity .13s;}
 .btn-save:hover{opacity:.82;}
 .btn-to-cliente{font-size:12px;padding:7px 13px;border-radius:var(--r-sm);background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border);cursor:pointer;font-weight:600;}
 
@@ -296,6 +297,23 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
 .fu-alert:hover{opacity:.85;}
 .fu-alert-icon{font-size:18px;}
 .fu-alert b{color:var(--red);}
+
+/* CLIENTE ALERT */
+.cli-alert{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r-lg);padding:12px 16px;margin:12px 12px 0;display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;}
+.cli-alert:hover{opacity:.85;}
+.cli-alert b{color:var(--blue);}
+
+/* DUPLICATE WARNING */
+.dup-warn{font-size:12px;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--r-sm);padding:6px 10px;margin-top:4px;display:none;}
+.dup-warn.dup-error{color:var(--red);background:var(--red-bg);border-color:var(--red-border);}
+
+/* CNPJ validation */
+.cnpj-invalid{border-color:var(--red-border)!important;background:var(--red-bg)!important;}
+.cnpj-valid{border-color:var(--green-border)!important;}
+
+/* BTN REABRIR */
+.btn-reabrir{font-size:12px;padding:7px 13px;border-radius:var(--r-sm);background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);cursor:pointer;font-weight:600;}
+.btn-reabrir:hover{opacity:.82;}
 
 /* METAS period toggle */
 .metas-period-toggle{display:flex;gap:4px;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;width:fit-content;}
@@ -337,9 +355,10 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
   <div class="nav-tabs" id="nav-tabs">
     <button class="tab active" onclick="switchView('kanban',this)">Kanban</button>
     <button class="tab" onclick="switchView('lista',this)">Lista</button>
-    <button class="tab" onclick="switchView('followup',this)">Follow-up</button>
+    <button class="tab" onclick="switchView('base',this)" id="tab-base">Base</button>
+    <button class="tab" onclick="switchView('carteira',this)" id="tab-carteira">Clientes</button>
+    <button class="tab" id="tab-followup" onclick="switchView('followup',this)">Follow-up</button>
     <button class="tab" onclick="switchView('metas',this)">Metas</button>
-    <button class="tab" onclick="switchView('carteira',this)">Carteira</button>
     <button class="tab" onclick="switchView('historico',this)">Histórico</button>
     <button class="tab" onclick="switchView('dashboard',this)">Dashboard</button>
     <button class="tab" id="tab-config" onclick="switchView('config',this)">⚙ Config</button>
@@ -357,7 +376,10 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
 </div>
 
 <!-- FOLLOWUP ALERT -->
-<div id="fu-alert-bar" style="display:none" onclick="switchView('followup',document.querySelector('.tab:nth-child(3)'))"></div>
+<div id="fu-alert-bar" style="display:none" onclick="switchView('followup',document.getElementById('tab-followup'))"></div>
+
+<!-- CLIENTE CONTATO ALERT -->
+<div id="cli-alert-bar" style="display:none" onclick="switchView('carteira',document.getElementById('tab-carteira'))"></div>
 
 <!-- KANBAN -->
 <div class="view active" id="view-kanban">
@@ -394,6 +416,54 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
   </div>
 </div>
 
+<!-- BASE DE PROSPECÇÃO -->
+<div class="view" id="view-base">
+  <div class="list-wrap">
+    <div class="list-toolbar">
+      <input class="search" type="text" id="base-view-search" placeholder="Buscar empresa, cidade..." oninput="renderBaseView()" style="width:220px">
+      <select class="filter-select" id="base-view-status" onchange="renderBaseView()">
+        <option value="">Todos os status</option>
+        <option value="livre">Disponível</option>
+        <option value="em_prospeccao">Em prospecção</option>
+      </select>
+      <span class="list-count" id="base-view-count"></span>
+    </div>
+    <div class="list-table-wrap">
+      <table class="list-table" style="min-width:700px">
+        <thead><tr>
+          <th>Empresa</th><th>CNPJ</th><th>Cidade / UF</th>
+          <th>E-mail</th><th>Telefone</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="base-view-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div class="view" id="view-carteira">
+  <div class="carteira-wrap">
+    <div class="carteira-stats" id="carteira-kpis"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+      <input class="search" type="text" id="carteira-search" placeholder="Buscar cliente, contato..." oninput="renderCarteira()" style="width:220px">
+      <select class="filter-select" id="carteira-fil-resp" onchange="renderCarteira()"><option value="">Todos responsáveis</option></select>
+      <select class="filter-select" id="carteira-fil-seg" onchange="renderCarteira()"><option value="">Todos segmentos</option></select>
+      <span class="list-count" id="carteira-count"></span>
+      <button class="base-import-btn" style="margin-left:auto" onclick="document.getElementById('cliente-file-input').click()">⬆ Importar Excel / CSV</button>
+      <input type="file" id="cliente-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importClientes(this)">
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;overflow-x:auto;">
+      <table class="cliente-table" style="min-width:900px">
+        <thead><tr>
+          <th>Empresa</th><th>Contato</th><th>WhatsApp</th><th>Segmento</th>
+          <th>Serviço</th><th>Valor/mês</th><th>Responsável</th><th>Fechamento</th><th>Próx. contato</th><th></th>
+        </tr></thead>
+        <tbody id="carteira-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- FOLLOW-UP -->
 <div class="view" id="view-followup">
   <div class="followup-wrap" id="followup-content"></div>
@@ -407,39 +477,6 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
       <button class="period-btn" onclick="setMetaPeriod('mes',this)">Este mês</button>
     </div>
     <div class="vendedor-grid" id="vendedor-grid"></div>
-  </div>
-</div>
-
-<!-- CARTEIRA -->
-<div class="view" id="view-carteira">
-  <div class="carteira-wrap">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Período</label>
-        <select class="filter-select" id="carteira-mes" onchange="renderCarteira()" style="font-family:var(--mono);font-size:13px;"></select>
-        <span id="carteira-resp-wrap" style="display:none;align-items:center;gap:8px;">
-          <label style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Responsável</label>
-          <select class="filter-select" id="carteira-resp" onchange="renderCarteira()"><option value="">Todos</option></select>
-        </span>
-      </div>
-    </div>
-    <div class="carteira-stats" id="carteira-stats"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="section-title" style="margin:0" id="carteira-table-title">Contratos ativos</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn-cancel" id="btn-voltar-carteira" onclick="voltarCarteira()" style="display:none;font-size:12px;">← Voltar</button>
-        <button class="btn-primary" onclick="openClienteModal(null)" id="btn-novo-cliente">+ Novo cliente</button>
-      </div>
-    </div>
-    <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);">
-      <table class="cliente-table" id="cliente-table">
-        <thead id="cliente-thead"><tr>
-          <th>Cliente</th><th>Segmento</th><th>Serviço</th><th>Ref. mensal</th>
-          <th>Faturado mês</th><th>Início</th><th>Renovação</th><th>Responsável</th>
-        </tr></thead>
-        <tbody id="cliente-tbody"></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
@@ -649,7 +686,7 @@ function applyPermissions() {
   // Hide new lead btn for visualizador
   if (n === 'visualizador') {
     document.getElementById('btn-novo').style.display = 'none';
-    document.getElementById('btn-novo-cliente').style.display = 'none';
+    document.getElementById('tab-base').style.display = 'none';
   }
 }
 
@@ -877,17 +914,131 @@ function tempShort(t){if(!t)return '';const tl=t.toLowerCase();if(tl.includes('q
 function canEdit(){return currentUser && currentUser.nivel !== 'visualizador';}
 
 // ═══════════════════════════════════════════
+// MÁSCARA CNPJ / CPF
+// ═══════════════════════════════════════════
+function maskCnpjCpf(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length <= 11) {
+    // CPF: 000.000.000-00
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  } else {
+    // CNPJ: 00.000.000/0000-00
+    v = v.slice(0,14);
+    v = v.replace(/(\d{2})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1/$2');
+    v = v.replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  }
+  input.value = v;
+  // Validação dos dígitos verificadores
+  const digits = input.value.replace(/\D/g,'');
+  const statusEl = document.getElementById('cnpj-status');
+  if (!statusEl) return;
+  if (digits.length === 11) {
+    const ok = validarCPF(digits);
+    input.classList.toggle('cnpj-invalid', !ok);
+    input.classList.toggle('cnpj-valid', ok);
+    statusEl.textContent = ok ? '✓ CPF válido' : digits.length===11 ? '✗ CPF inválido' : '';
+    statusEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+  } else if (digits.length === 14) {
+    const ok = validarCNPJ(digits);
+    input.classList.toggle('cnpj-invalid', !ok);
+    input.classList.toggle('cnpj-valid', ok);
+    statusEl.textContent = ok ? '✓ CNPJ válido' : '✗ CNPJ inválido';
+    statusEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+  } else {
+    input.classList.remove('cnpj-invalid','cnpj-valid');
+    statusEl.textContent = '';
+  }
+}
+
+function validarCPF(cpf) {
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  let s = 0;
+  for (let i=0;i<9;i++) s += parseInt(cpf[i])*(10-i);
+  let r = (s*10)%11; if(r===10||r===11) r=0;
+  if(r!==parseInt(cpf[9])) return false;
+  s=0;
+  for (let i=0;i<10;i++) s += parseInt(cpf[i])*(11-i);
+  r=(s*10)%11; if(r===10||r===11) r=0;
+  return r===parseInt(cpf[10]);
+}
+
+function validarCNPJ(cnpj) {
+  if (/^(\d)\1{13}$/.test(cnpj)) return false;
+  const calc = (n, w) => {
+    let s=0; let pos=w;
+    for(let i=0;i<n.length;i++){s+=parseInt(n[i])*pos--;if(pos<2)pos=9;}
+    const r=s%11; return r<2?0:11-r;
+  };
+  return calc(cnpj.slice(0,12),5)===parseInt(cnpj[12]) && calc(cnpj.slice(0,13),6)===parseInt(cnpj[13]);
+}
+
+// ═══════════════════════════════════════════
+// VERIFICAÇÃO DE DUPLICIDADE
+// ═══════════════════════════════════════════
+function checkDuplicate() {
+  const empresaEl  = document.getElementById('f-empresa');
+  const cnpjEl     = document.getElementById('f-cnpj');
+  const warnEmp    = document.getElementById('dup-warn-empresa');
+  const warnCnpj   = document.getElementById('dup-warn-cnpj');
+  if (!empresaEl || !cnpjEl) return;
+
+  const empresaVal = empresaEl.value.trim().toLowerCase();
+  const cnpjRaw    = (cnpjEl.value.replace(/\D/g,'') || '').trim();
+
+  // Limpar avisos
+  if (warnEmp)  { warnEmp.style.display  = 'none'; warnEmp.textContent  = ''; }
+  if (warnCnpj) { warnCnpj.style.display = 'none'; warnCnpj.textContent = ''; }
+
+  if (!empresaVal && !cnpjRaw) return;
+
+  // Fontes: leads ativos, clientes, base de prospecção
+  const fontes = [
+    ...leads.map(l => ({ tipo:'Lead', nome:(l.empresa||l.contato_nome||''), cnpj:(l.cnpj||'').replace(/\D/g,''), resp:l.responsavel })),
+    ...clientes.map(c => ({ tipo:'Cliente', nome:(c.nome||''), cnpj:(c.cnpj||'').replace(/\D/g,''), resp:c.responsavel })),
+    ...baseProspeccao.map(b => ({ tipo:'Base', nome:(b.empresa||''), cnpj:(b.cnpj||'').replace(/\D/g,''), resp:b.responsavel })),
+  ];
+
+  // 1. Verificar CNPJ/CPF (prioridade)
+  if (cnpjRaw.length >= 11) {
+    const dup = fontes.find(f => f.cnpj && f.cnpj === cnpjRaw);
+    if (dup && warnCnpj) {
+      warnCnpj.style.display = 'block';
+      warnCnpj.className = 'dup-warn dup-error';
+      warnCnpj.textContent = `⚠ CNPJ/CPF já cadastrado como ${dup.tipo}: "${dup.nome}"${dup.resp?' — Resp: '+dup.resp:''}`;
+      return; // prioridade: não precisa checar razão social
+    }
+  }
+
+  // 2. Verificar razão social idêntica (100% igual, case-insensitive)
+  if (empresaVal.length >= 3) {
+    const dup = fontes.find(f => f.nome && f.nome.toLowerCase() === empresaVal);
+    if (dup && warnEmp) {
+      warnEmp.style.display = 'block';
+      warnEmp.className = 'dup-warn';
+      warnEmp.textContent = `⚠ Empresa já cadastrada como ${dup.tipo}${dup.resp?' — Resp: '+dup.resp:''}`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
 // SWITCH VIEW
 // ═══════════════════════════════════════════
 
 function renderAll() {
   setupFilters();
   showFollowupAlert();
+  showClienteAlert();
+  autoMigrateLeadsFechados();
   if(currentView==='kanban')renderKanban();
   else if(currentView==='lista')renderLista();
+  else if(currentView==='base')renderBaseView();
+  else if(currentView==='carteira')renderCarteira();
   else if(currentView==='followup')renderFollowup();
   else if(currentView==='metas')renderMetas();
-  else if(currentView==='carteira')renderCarteira();
   else if(currentView==='historico')renderHistorico();
   else if(currentView==='dashboard')renderDashboard();
   else if(currentView==='config')renderConfig();
@@ -909,6 +1060,77 @@ function showFollowupAlert() {
       ${hoje>0?`<b>${hoje}</b> para hoje`:''} — clique para ver</span>`;
   } else {
     bar.style.display = 'none';
+  }
+}
+
+function showClienteAlert() {
+  const bar = document.getElementById('cli-alert-bar');
+  if (!bar) return;
+  const tod = today();
+  const isAdmin = currentUser?.nivel === 'admin';
+  const userName = currentUser?.nome || '';
+  const vencer = clientes.filter(c => {
+    if (!isAdmin && c.responsavel !== userName) return false;
+    return c.proximo_contato && c.proximo_contato <= tod;
+  });
+  if (vencer.length > 0) {
+    bar.style.display = 'flex';
+    bar.className = 'cli-alert';
+    bar.innerHTML = `<span style="font-size:18px">📋</span><span>${vencer.length > 1 ? `<b>${vencer.length} clientes</b> com próximo contato para hoje ou atrasado` : `<b>${esc(vencer[0].nome)}</b> — próximo contato agendado para hoje`} — clique para ver</span>`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// Auto-migra leads "Fechado" com mais de 1 dia para Clientes
+async function autoMigrateLeadsFechados() {
+  const tod = today();
+  const toMigrate = leads.filter(l => {
+    if (l.stage !== 'fechado') return false;
+    const fechamento = l.data_ultimo_contato || l.data_lead || '';
+    if (!fechamento) return false;
+    return daysDiff(fechamento) >= 1;
+  });
+  if (!toMigrate.length) return;
+  let changed = false;
+  for (const l of toMigrate) {
+    // Verifica se já existe como cliente pelo nome
+    const jaExiste = clientes.some(c => c.nome && l.empresa && c.nome.toLowerCase() === l.empresa.toLowerCase());
+    if (!jaExiste) {
+      const novoCliente = {
+        id: nextClienteId++,
+        nome: l.empresa || l.contato_nome,
+        contato: l.contato_nome,
+        whatsapp: l.whatsapp,
+        email: l.email,
+        segmento: l.segmento,
+        servico: l.servico,
+        tipo_valor: 'variavel',
+        valor_mensal: l.valor || 0,
+        valor_anual: 0,
+        contrato: '',
+        responsavel: l.responsavel,
+        inicio: l.data_ultimo_contato || l.data_lead || tod,
+        renovacao: '',
+        proximo_contato: '',
+        data_fechamento: l.data_ultimo_contato || l.data_lead || tod,
+        lead_id: l.id,
+        obs: l.obs || '',
+        cnpj: l.cnpj || '',
+        cidade: l.cidade || '',
+        estado: l.estado || '',
+      };
+      clientes.push(novoCliente);
+      addHist('cliente', 'Cliente: ' + novoCliente.nome, 'Migrado automaticamente do Kanban');
+      changed = true;
+    }
+    // Remove lead do Kanban
+    leads = leads.filter(x => x.id !== l.id);
+    changed = true;
+  }
+  if (changed) {
+    await Promise.all([saveLeads(), saveClientes()]);
+    toast(`${toMigrate.length} lead(s) fechado(s) migrado(s) para Clientes ✓`);
   }
 }
 
@@ -1186,352 +1408,15 @@ function renderMetas() {
 }
 
 // ═══════════════════════════════════════════
-// CARTEIRA DE CLIENTES
+// SWITCH VIEW
 // ═══════════════════════════════════════════
-let carteiraFiltro = null;
-
 function switchView(id, btn) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
-  if(id !== 'carteira') carteiraFiltro = null;
   currentView = id;
   renderAll();
-}
-
-function setupCarteiraMes() {
-  const sel = document.getElementById('carteira-mes');
-  if (!sel) return;
-  const cur = sel.value;
-  const meses = [...new Set(pedidos.map(p=>(p.data||'').substring(0,7)).filter(m=>m&&m.length===7))].sort().reverse();
-  const todayMes = today().substring(0,7);
-  if (!meses.includes(todayMes)) meses.unshift(todayMes);
-  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  sel.innerHTML = meses.map(m => {
-    const [y, mo] = m.split('-');
-    return `<option value="${m}">${nomes[parseInt(mo)-1]}/${y}</option>`;
-  }).join('');
-  if (cur && meses.includes(cur)) sel.value = cur;
-
-  // Show responsavel filter for admins
-  const wrap = document.getElementById('carteira-resp-wrap');
-  const respSel = document.getElementById('carteira-resp');
-  if (currentUser && currentUser.nivel === 'admin') {
-    wrap.style.display = 'flex';
-    const curResp = respSel.value;
-    const resps = [...new Set(clientes.map(c=>c.responsavel).filter(Boolean))].sort();
-    respSel.innerHTML = '<option value="">Todos</option>' + resps.map(r=>`<option value="${r}">${r}</option>`).join('');
-    if (curResp) respSel.value = curResp;
-  } else {
-    wrap.style.display = 'none';
-  }
-}
-
-function voltarCarteira() {
-  carteiraFiltro = null;
-  document.getElementById('btn-voltar-carteira').style.display = 'none';
-  document.getElementById('carteira-table-title').textContent = 'Contratos ativos';
-  document.getElementById('cliente-thead').innerHTML = `<tr>
-    <th>Cliente</th><th>Segmento</th><th>Serviço</th><th>Ref. mensal</th>
-    <th>Faturado mês</th><th>Início</th><th>Renovação</th><th>Responsável</th>
-  </tr>`;
-  renderCarteiraTabela();
-}
-
-function filtrarCarteiraPor(tipo) {
-  carteiraFiltro = tipo;
-  document.getElementById('btn-voltar-carteira').style.display = 'inline-block';
-  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
-  const [y, mo] = mesStr.split('-');
-  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const mesLabel = `${nomes[parseInt(mo)-1]}/${y}`;
-  const titulo = tipo==='faturado' ? `Pedidos concluídos — ${mesLabel}` :
-                 tipo==='aguardando' ? `Pedidos aguardando — ${mesLabel}` :
-                 `Todos os pedidos — ${mesLabel}`;
-  document.getElementById('carteira-table-title').textContent = titulo;
-  document.getElementById('cliente-thead').innerHTML = `<tr>
-    <th>Cliente</th><th>Proposta / Coleta</th><th>Serviço</th><th>Valor</th><th>Status</th>
-  </tr>`;
-  renderCarteiraTabela();
-}
-
-function renderCarteira() {
-  setupCarteiraMes();
-  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
-  const filtResp = currentUser?.nivel==='admin' ? (document.getElementById('carteira-resp')?.value||'') : (currentUser?.nome||'');
-
-  const clientesFiltrados = filtResp
-    ? clientes.filter(c=>c.responsavel===filtResp)
-    : (currentUser?.nivel==='vendedor' ? clientes.filter(c=>c.responsavel===currentUser.nome) : clientes);
-
-  const idsFiltrados = new Set(clientesFiltrados.map(c=>String(c.id)));
-  const pedMes = pedidos.filter(p=>(p.data||'').startsWith(mesStr)&&(filtResp?idsFiltrados.has(String(p.cliente_id)):true));
-  const receitaMes = pedMes.filter(p=>p.status==='concluido').reduce((s,p)=>s+Number(p.valor||0),0);
-  const totalPed = pedMes.length;
-  const aguardando = pedMes.filter(p=>p.status==='aguardando').length;
-  const alertas = clientesFiltrados.filter(c=>{
-    if(!c.renovacao)return false;
-    const d=daysDiff(c.renovacao);
-    return d!==null&&d>=-30&&d<=0;
-  }).length;
-
-  document.getElementById('carteira-stats').innerHTML = `
-    <div class="c-kpi" style="cursor:pointer" onclick="filtrarCarteiraPor('faturado')">
-      <div class="c-kpi-label">Faturado este mês</div>
-      <div class="c-kpi-value" style="font-size:18px">${fmt(receitaMes)}</div>
-      <div class="c-kpi-sub" style="color:var(--blue)">ver pedidos →</div>
-    </div>
-    <div class="c-kpi" style="cursor:pointer" onclick="filtrarCarteiraPor('todos')">
-      <div class="c-kpi-label">Total pedidos mês</div>
-      <div class="c-kpi-value">${totalPed}</div>
-      <div class="c-kpi-sub" style="color:var(--blue)">${aguardando} aguardando →</div>
-    </div>
-    <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${clientesFiltrados.length}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Renovações próximas</div><div class="c-kpi-value" style="color:${alertas>0?'var(--amber)':'var(--text)'}">${alertas}</div><div class="c-kpi-sub">próximos 30 dias</div></div>`;
-
-  renderCarteiraTabela();
-}
-
-function renderCarteiraTabela() {
-  const mesStr = document.getElementById('carteira-mes')?.value || today().substring(0,7);
-  const filtResp = currentUser?.nivel==='admin' ? (document.getElementById('carteira-resp')?.value||'') : (currentUser?.nome||'');
-  const clientesFiltrados = filtResp
-    ? clientes.filter(c=>c.responsavel===filtResp)
-    : (currentUser?.nivel==='vendedor' ? clientes.filter(c=>c.responsavel===currentUser.nome) : clientes);
-  const idsFiltrados = new Set(clientesFiltrados.map(c=>String(c.id)));
-  const tbody = document.getElementById('cliente-tbody');
-
-  if (carteiraFiltro) {
-    const pedMes = pedidos.filter(p=>{
-      if (!(p.data||'').startsWith(mesStr)) return false;
-      if (!idsFiltrados.has(String(p.cliente_id)) && filtResp) return false;
-      if (carteiraFiltro==='faturado') return p.status==='concluido';
-      if (carteiraFiltro==='aguardando') return p.status==='aguardando';
-      return true;
-    });
-    if (!pedMes.length) {
-      tbody.innerHTML=`<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum pedido encontrado.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = pedMes.map(p=>{
-      const statusClass = p.status==='concluido'?'status-concluido':p.status==='cancelado'?'status-cancelado':'status-aguardando';
-      const statusLabel = p.status==='concluido'?'Concluído':p.status==='cancelado'?'Cancelado':'Aguardando';
-      return `<tr onclick="openClienteModal(${p.cliente_id})">
-        <td><div style="font-size:13px;font-weight:600;color:var(--text)">${esc(p.cliente_nome||'—')}</div></td>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${esc(p.obs||'—')}</td>
-        <td>${esc(p.servico||'—')}</td>
-        <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(Number(p.valor)||0)}</td>
-        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
-      </tr>`;
-    }).join('');
-    return;
-  }
-
-  if (!clientesFiltrados.length) {
-    tbody.innerHTML='<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum cliente encontrado.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = clientesFiltrados.map(c=>{
-    const diasRen=daysDiff(c.renovacao);
-    let renClass='',renIcon='';
-    if(diasRen!==null){
-      if(diasRen>0){renClass='renovacao-vencida';renIcon='⚠ ';}
-      else if(diasRen>=-30){renClass='renovacao-alerta';renIcon='🔔 ';}
-      else{renClass='renovacao-ok';}
-    }
-    const pedMes=pedidos.filter(p=>p.cliente_id==c.id&&(p.data||'').startsWith(mesStr));
-    const faturadoMes=pedMes.filter(p=>p.status==='concluido').reduce((s,p)=>s+Number(p.valor||0),0);
-    const tipoTag=c.tipo_valor==='variavel'
-      ?`<span class="tipo-variavel">Variável</span>`
-      :`<span class="tipo-fixo">Fixo</span>`;
-    return `<tr onclick="openClienteModal(${c.id})">
-      <td><div class="lead-name" style="font-size:13px;font-weight:600;color:var(--text)">${esc(c.nome)}</div><div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:2px">${esc(c.contato||'')} ${tipoTag}</div></td>
-      <td>${esc(c.segmento||'—')}</td>
-      <td>${esc(c.servico||'—')}</td>
-      <td style="font-family:var(--mono);font-weight:500;color:var(--text)">${fmt(Number(c.valor_mensal)||0)}<div style="font-size:10px;color:var(--text3)">ref. mensal</div></td>
-      <td style="font-family:var(--mono);font-weight:500;color:var(--green)">${fmt(faturadoMes)}<div style="font-size:10px;color:var(--text3)">${pedMes.length} pedido${pedMes.length!==1?'s':''}</div></td>
-      <td style="font-family:var(--mono)">${fmtDate(c.inicio)}</td>
-      <td class="${renClass}" style="font-family:var(--mono)">${renIcon}${fmtDate(c.renovacao)}</td>
-      <td>${esc(c.responsavel||'—')}</td>
-    </tr>`;
-  }).join('');
-}
-
-function openClienteModal(id) {
-  if(!canEdit()&&!id)return;
-  const numId = id ? Number(id) : null;
-  const cli = numId ? clientes.find(c=>Number(c.id)===numId) : null;
-  const isNew = !cli;
-  const d = cli||{nome:'',contato:'',whatsapp:'',email:'',segmento:'',servico:'',valor_mensal:'',valor_anual:'',contrato:'',tipo_valor:'fixo',inicio:today(),renovacao:'',responsavel:'',obs:''};
-  const respOpts = ['',... (config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
-  const contratoOpts = ['', ...CONTRATO_OPTS].map(o=>`<option value="${o}" ${d.contrato===o?'selected':''}>${o||'Selecionar...'}</option>`).join('');
-  const tipoOpts = ['fixo','variavel'].map(t=>`<option value="${t}" ${(d.tipo_valor||'fixo')===t?'selected':''}>${t==='fixo'?'Fixo (contrato mensal estável)':'Variável (demanda por análise)'}</option>`).join('');
-
-  // Pedidos do cliente
-  const cliPedidos = id ? pedidos.filter(p=>p.cliente_id==id).sort((a,b)=>(b.data||'').localeCompare(a.data||'')) : [];
-  const mesStr = today().substring(0,7);
-  const faturadoMes = cliPedidos.filter(p=>p.status==='concluido'&&(p.data||'').startsWith(mesStr)).reduce((s,p)=>s+Number(p.valor||0),0);
-
-  const pedidosHTML = !isNew ? `
-    <div class="modal-section" style="margin-top:20px">Pedidos / Análises</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <span style="font-size:12px;color:var(--text3)">Faturado este mês: <b style="color:var(--green)">${fmt(faturadoMes)}</b></span>
-      ${canEdit()?`<button class="btn-add" style="font-size:12px;padding:5px 12px" onclick="openPedidoModal(${id},null)">+ Novo pedido</button>`:''}
-    </div>
-    ${cliPedidos.length===0?`<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhum pedido registrado ainda.</div>`:`
-    <table class="pedidos-table">
-      <thead><tr><th>Data</th><th>Serviço</th><th>Valor</th><th>Status</th>${canEdit()?'<th></th>':''}</tr></thead>
-      <tbody>${cliPedidos.map(p=>`<tr>
-        <td style="font-family:var(--mono)">${fmtDate(p.data)}</td>
-        <td>${esc(p.servico||'—')}</td>
-        <td style="font-family:var(--mono);font-weight:500">${fmt(p.valor)}</td>
-        <td><span class="status-badge status-${p.status||'aguardando'}">${p.status==='concluido'?'Concluído':p.status==='cancelado'?'Cancelado':'Aguardando'}</span></td>
-        ${canEdit()?`<td><button onclick="openPedidoModal(${id},${p.id})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 6px">✏</button></td>`:''}
-      </tr>`).join('')}</tbody>
-    </table>`}` : '';
-
-  document.getElementById('modal-root').innerHTML = `
-  <div class="overlay" id="overlay" onclick="closeOnBg(event)">
-    <div class="modal" style="width:600px">
-      <div class="modal-hd"><div class="modal-title">${isNew?'Novo cliente':'Editar cliente'}</div><button class="btn-close" onclick="closeModal()">×</button></div>
-      <div class="modal-section">Dados do cliente</div>
-      <div class="form-grid">
-        <div class="field full"><label>Nome / Razão social</label><input type="text" id="cf-nome" value="${esc(d.nome)}" placeholder="Nome do cliente"></div>
-        <div class="field"><label>Contato</label><input type="text" id="cf-contato" value="${esc(d.contato)}" placeholder="Nome do contato"></div>
-        <div class="field"><label>WhatsApp</label><input type="text" id="cf-whatsapp" value="${esc(d.whatsapp)}" placeholder="(xx) 9xxxx-xxxx"></div>
-        <div class="field"><label>E-mail</label><input type="text" id="cf-email" value="${esc(d.email)}" placeholder="email@empresa.com"></div>
-        <div class="field"><label>Segmento</label><input type="text" id="cf-segmento" value="${esc(d.segmento)}" placeholder="Segmento"></div>
-        <div class="field"><label>Serviço contratado</label><input type="text" id="cf-servico" value="${esc(d.servico)}" placeholder="Serviço"></div>
-      </div>
-      <div class="modal-section">Contrato</div>
-      <div class="form-grid">
-        <div class="field"><label>Tipo de valor</label><select id="cf-tipo">${tipoOpts}</select></div>
-        <div class="field"><label>Valor ref. mensal (R$)</label><input type="number" id="cf-val-mes" value="${d.valor_mensal||''}" placeholder="Estimativa" min="0"></div>
-        <div class="field"><label>Tipo de contrato</label><select id="cf-contrato">${contratoOpts}</select></div>
-        <div class="field"><label>Responsável</label><select id="cf-resp">${respOpts}</select></div>
-        <div class="field"><label>Início do contrato</label><input type="date" id="cf-inicio" value="${toDateInput(d.inicio)}"></div>
-        <div class="field"><label>Data de renovação</label><input type="date" id="cf-renovacao" value="${toDateInput(d.renovacao)}"></div>
-        <div class="field full"><label>Observações</label><textarea id="cf-obs" placeholder="Notas sobre o cliente...">${esc(d.obs)}</textarea></div>
-      </div>
-      ${pedidosHTML}
-      <div class="modal-footer">
-        ${!isNew?`<button class="btn-del" onclick="deleteCliente(${d.id})">Excluir</button>`:''}
-        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="btn-save" onclick="saveCliente(${isNew?'null':d.id})">${isNew?'Adicionar cliente':'Salvar'}</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function saveCliente(id) {
-  const nome = document.getElementById('cf-nome').value.trim();
-  if(!nome){alert('Informe o nome do cliente.');return;}
-  const obj = {
-    nome, contato:document.getElementById('cf-contato').value.trim(),
-    whatsapp:document.getElementById('cf-whatsapp').value.trim(),
-    email:document.getElementById('cf-email').value.trim(),
-    segmento:document.getElementById('cf-segmento').value.trim(),
-    servico:document.getElementById('cf-servico').value.trim(),
-    tipo_valor:document.getElementById('cf-tipo').value,
-    valor_mensal:parseFloat(document.getElementById('cf-val-mes').value)||0,
-    valor_anual:0,
-    contrato:document.getElementById('cf-contrato').value,
-    responsavel:document.getElementById('cf-resp').value,
-    inicio:document.getElementById('cf-inicio').value,
-    renovacao:document.getElementById('cf-renovacao').value,
-    obs:document.getElementById('cf-obs').value.trim(),
-  };
-  if(id && id !== 'null'){
-    const numId = Number(id);
-    const idx=clientes.findIndex(c=>Number(c.id)===numId);
-    clientes[idx]={...clientes[idx],...obj};
-    addHist('edit','Cliente: '+nome,'Dados atualizados');
-    toast('Cliente atualizado ✓');
-  } else {
-    clientes.push({id:nextClienteId++,...obj});
-    addHist('hist-cliente','Cliente: '+nome,'Novo cliente adicionado');
-    toast('Cliente adicionado ✓');
-  }
-  saveClientes(); closeModal(); renderAll();
-}
-
-function openPedidoModal(clienteId, pedidoId) {
-  const ped = pedidoId ? pedidos.find(p=>Number(p.id)===Number(pedidoId)) : null;
-  const isNew = !ped;
-  const cli = clientes.find(c=>c.id===clienteId);
-  const d = ped||{data:today(),servico:cli?.servico||'',valor:'',status:'aguardando',obs:''};
-  const statusOpts = ['aguardando','concluido','cancelado'].map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s==='aguardando'?'Aguardando':s==='concluido'?'Concluído':'Cancelado'}</option>`).join('');
-
-  document.getElementById('modal-root').innerHTML = `
-  <div class="overlay" id="overlay" onclick="closeOnBg(event)">
-    <div class="modal" style="width:440px">
-      <div class="modal-hd">
-        <div>
-          <div class="modal-title">${isNew?'Novo pedido':'Editar pedido'}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${esc(cli?.nome||'')}</div>
-        </div>
-        <button class="btn-close" onclick="openClienteModal(${clienteId})">×</button>
-      </div>
-      <div class="form-grid">
-        <div class="field"><label>Data</label><input type="date" id="pf-data" value="${toDateInput(d.data)}"></div>
-        <div class="field"><label>Status</label><select id="pf-status">${statusOpts}</select></div>
-        <div class="field full"><label>Serviço / Análise</label><input type="text" id="pf-servico" value="${esc(d.servico)}" placeholder="Descreva o serviço solicitado"></div>
-        <div class="field"><label>Valor (R$)</label><input type="number" id="pf-valor" value="${d.valor||''}" placeholder="0" min="0"></div>
-        <div class="field full"><label>Observações</label><textarea id="pf-obs" placeholder="Notas sobre este pedido...">${esc(d.obs||'')}</textarea></div>
-      </div>
-      <div class="modal-footer">
-        ${!isNew?`<button class="btn-del" onclick="deletePedido(${pedidoId},${clienteId})">Excluir</button>`:''}
-        <button class="btn-cancel" onclick="openClienteModal(${clienteId})">Voltar</button>
-        <button class="btn-save" onclick="savePedido(${isNew?'null':pedidoId},${clienteId})">${isNew?'Adicionar':'Salvar'}</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function savePedido(pedidoId, clienteId) {
-  const cli = clientes.find(c=>c.id===clienteId);
-  const obj = {
-    cliente_id: clienteId,
-    cliente_nome: cli?.nome||'',
-    data: document.getElementById('pf-data').value,
-    servico: document.getElementById('pf-servico').value.trim(),
-    valor: parseFloat(document.getElementById('pf-valor').value)||0,
-    status: document.getElementById('pf-status').value,
-    obs: document.getElementById('pf-obs').value.trim(),
-  };
-  if(pedidoId && pedidoId !== 'null'){
-    const numId = Number(pedidoId);
-    const idx=pedidos.findIndex(p=>Number(p.id)===numId);
-    pedidos[idx]={...pedidos[idx],...obj};
-    addHist('edit','Pedido: '+(cli?.nome||''),'Pedido atualizado — '+fmt(obj.valor));
-    toast('Pedido atualizado ✓');
-  } else {
-    pedidos.push({id:nextPedidoId++,...obj});
-    addHist('add','Pedido: '+(cli?.nome||''),'Novo pedido — '+fmt(obj.valor));
-    toast('Pedido adicionado ✓');
-  }
-  savePedidos();
-  openClienteModal(clienteId);
-  renderAll();
-}
-
-function deletePedido(pedidoId, clienteId) {
-  if(!confirm('Remover este pedido?'))return;
-  pedidos=pedidos.filter(p=>Number(p.id)!==Number(pedidoId));
-  savePedidos();
-  openClienteModal(clienteId);
-  renderAll();
-  toast('Pedido removido');
-}
-
-function deleteCliente(id) {
-  const numId = Number(id);
-  const c = clientes.find(x=>Number(x.id)===numId);
-  if(!confirm('Remover este cliente?'))return;
-  clientes = clientes.filter(x=>Number(x.id)!==numId);
-  addHist('hist-delete','Cliente: '+(c?.nome||id),'Removido');
-  saveClientes(); closeModal(); renderAll(); toast('Cliente removido');
 }
 
 // ═══════════════════════════════════════════
@@ -1701,10 +1586,10 @@ function openModal(id) {
       <div class="form-grid">
         <div class="field"><label>Data do lead</label><input type="date" id="f-data_lead" value="${toDateInput(d.data_lead)}" ${ro}></div>
         <div class="field"><label>ID do lead</label><input type="text" id="f-id_lead" value="${esc(d.id_lead)}" placeholder="Ex: 001" ${ro}></div>
-        <div class="field full"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa" ${ro}></div>
+        <div class="field full"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa" ${ro} oninput="checkDuplicate()"><div class="dup-warn" id="dup-warn-empresa"></div></div>
         <div class="field"><label>Cidade</label><input type="text" id="f-cidade" value="${esc(d.cidade)}" placeholder="Cidade" ${ro}></div>
         <div class="field"><label>Estado (UF)</label><input type="text" id="f-estado" value="${esc(d.estado)}" placeholder="SC" maxlength="2" style="text-transform:uppercase" ${ro}></div>
-        <div class="field"><label>CNPJ / CPF</label><input type="text" id="f-cnpj" value="${esc(d.cnpj)}" placeholder="xx.xxx.xxx/0001-xx" ${ro}></div>
+        <div class="field"><label>CNPJ / CPF</label><input type="text" id="f-cnpj" value="${esc(d.cnpj)}" placeholder="xx.xxx.xxx/0001-xx" ${ro} oninput="maskCnpjCpf(this);checkDuplicate()"><div class="dup-warn" id="dup-warn-cnpj"></div><div style="font-size:11px;color:var(--text3);margin-top:3px" id="cnpj-status"></div></div>
         <div class="field"><label>Segmento</label><select id="f-segmento" ${ro}>${segmentoOpts}</select></div>
         <div class="field"><label>Origem</label><select id="f-origem" ${ro}>${origemOpts}</select></div>
       </div>
@@ -1734,34 +1619,47 @@ function openModal(id) {
       </div>
       <div class="modal-footer">
         ${!isNew&&canEdit()?`<button class="btn-del" onclick="deleteLead(${d.id})">Excluir</button>`:''}
-        ${!isNew&&d.stage==='fechado'&&canEdit()?`<button class="btn-to-cliente" onclick="converterParaCliente(${d.id})">→ Carteira</button>`:''}
         <button class="btn-cancel" onclick="closeModal()">${readonly?'Fechar':'Cancelar'}</button>
         ${canEdit()?`<button class="btn-save" onclick="saveLead(${isNew?'null':d.id})">${isNew?'Adicionar lead':'Salvar alterações'}</button>`:''}
       </div>
     </div>
   </div>`;
-}
-
-function converterParaCliente(leadId) {
-  const l = leads.find(x=>x.id===leadId);
-  if(!l)return;
-  closeModal();
-  // Pre-fill cliente modal with lead data
-  const cli = {nome:l.empresa||l.contato_nome,contato:l.contato_nome,whatsapp:l.whatsapp,email:l.email,segmento:l.segmento,servico:l.servico,valor_mensal:l.valor,valor_anual:'',contrato:'',responsavel:l.responsavel,inicio:today(),renovacao:'',obs:l.obs||''};
-  clientes.push({id:nextClienteId++,...cli});
-  addHist('hist-cliente','Cliente: '+(cli.nome||''),'Convertido de lead');
-  saveClientes();
-  toast('Lead convertido para carteira ✓');
-  switchView('carteira', document.querySelector('.tab:nth-child(5)'));
+  // Aplica máscara CNPJ e checa duplicata em leads existentes
+  setTimeout(_initModalCnpj, 50);
 }
 
 function closeOnBg(e){if(e.target.id==='overlay')closeModal();}
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
 
+// Aplica máscara e checa duplicata ao abrir modal de edição com dados preexistentes
+function _initModalCnpj() {
+  const el = document.getElementById('f-cnpj');
+  if (el && el.value) { maskCnpjCpf(el); checkDuplicate(); }
+}
+
 function saveLead(id) {
   const empresa=document.getElementById('f-empresa').value.trim();
   const contato=document.getElementById('f-contato_nome').value.trim();
   if(!empresa&&!contato){alert('Informe o nome da empresa ou do contato.');return;}
+
+  // Validar CNPJ/CPF se preenchido
+  const cnpjRaw = document.getElementById('f-cnpj').value.replace(/\D/g,'');
+  if (cnpjRaw.length > 0) {
+    if (cnpjRaw.length === 11 && !validarCPF(cnpjRaw)) {
+      alert('CPF inválido. Verifique os dígitos e tente novamente.');
+      document.getElementById('f-cnpj').focus();
+      return;
+    }
+    if (cnpjRaw.length === 14 && !validarCNPJ(cnpjRaw)) {
+      alert('CNPJ inválido. Verifique os dígitos e tente novamente.');
+      document.getElementById('f-cnpj').focus();
+      return;
+    }
+    if (cnpjRaw.length !== 11 && cnpjRaw.length !== 14) {
+      // tamanho diferente — pode ser digitação incompleta, apenas avisa
+      if (!confirm('O CNPJ/CPF parece incompleto. Deseja salvar mesmo assim?')) return;
+    }
+  }
   const numId = id && id !== 'null' ? Number(id) : null;
   const prevStage = numId ? leads.find(l=>Number(l.id)===numId)?.stage : null;
   const obj={
@@ -2046,6 +1944,343 @@ function selecionarDaBase(id) {
 
 // Hook no saveLead para marcar a empresa como "em prospecção"
 const _origSaveLeadBase = window.saveLead;
+
+// ═══════════════════════════════════════════
+// BASE VIEW — Lista de prospecção do vendedor
+// ═══════════════════════════════════════════
+function renderBaseView() {
+  const tbody = document.getElementById('base-view-tbody');
+  const countEl = document.getElementById('base-view-count');
+  if (!tbody) return;
+
+  const isAdmin = currentUser?.nivel === 'admin';
+  const userName = currentUser?.nome || '';
+  const q = (document.getElementById('base-view-search')?.value || '').toLowerCase().trim();
+  const statusFil = document.getElementById('base-view-status')?.value || '';
+
+  // Vendedor vê só as suas; admin vê todas
+  let lista = baseProspeccao.filter(b =>
+    isAdmin || !b.responsavel || b.responsavel === userName
+  );
+
+  if (q) lista = lista.filter(b =>
+    [b.empresa, b.cidade, b.cnpj, b.email, b.telefone].some(v => (v||'').toLowerCase().includes(q))
+  );
+  if (statusFil) lista = lista.filter(b => (b.status||'livre') === statusFil);
+
+  if (countEl) countEl.textContent = `${lista.length} empresa${lista.length!==1?'s':''}`;
+
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="list-empty">${
+      q || statusFil ? 'Nenhuma empresa encontrada com esses filtros.' :
+      isAdmin ? 'Nenhuma empresa na base. Importe pelo Config.' :
+      'Nenhuma empresa atribuída a você ainda.'
+    }</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(b => {
+    const jaTemLead = leads.some(l =>
+      l.empresa && b.empresa && l.empresa.toLowerCase() === b.empresa.toLowerCase() &&
+      l.stage !== 'perdido'
+    );
+    const statusLivre = (b.status || 'livre') === 'livre';
+    return `<tr>
+      <td class="td-main">
+        <div class="lead-name">${esc(b.empresa)}</div>
+        ${b.responsavel && isAdmin ? `<div class="lead-contact">${esc(b.responsavel)}</div>` : ''}
+      </td>
+      <td>${esc(b.cnpj)||'—'}</td>
+      <td>${b.cidade?esc(b.cidade):'—'}${b.estado?' / '+esc(b.estado):''}</td>
+      <td>${b.email?`<a href="mailto:${esc(b.email)}" style="color:var(--blue);text-decoration:none">${esc(b.email)}</a>`:'—'}</td>
+      <td>${b.telefone?`<a href="tel:${esc(b.telefone)}" style="color:var(--blue);text-decoration:none">${esc(b.telefone)}</a>`:'—'}</td>
+      <td><span class="base-status-${b.status||'livre'}">${statusLivre?'Disponível':'Em prospecção'}</span></td>
+      <td>${canEdit() && statusLivre && !jaTemLead
+        ? `<button class="btn-primary" style="font-size:11px;padding:5px 10px" onclick="criarLeadDaBase(${b.id})">+ Criar lead</button>`
+        : jaTemLead ? `<span style="font-size:11px;color:var(--text3)">Lead ativo</span>` : ''
+      }</td>
+    </tr>`;
+  }).join('');
+}
+
+function criarLeadDaBase(id) {
+  const b = baseProspeccao.find(x => x.id === id);
+  if (!b) return;
+  openModal(null);
+  setTimeout(() => {
+    const set = (fieldId, val) => { const el = document.getElementById(fieldId); if (el && val) el.value = val; };
+    set('f-empresa',     b.empresa);
+    set('f-cnpj',        b.cnpj);
+    set('f-cidade',      b.cidade);
+    set('f-estado',      b.estado);
+    set('f-email',       b.email);
+    set('f-whatsapp',    b.telefone);
+    set('f-responsavel', b.responsavel);
+    window._baseItemSelecionado = id;
+    toast(`"${b.empresa}" carregada — preencha os detalhes e salve ✓`);
+  }, 80);
+}
+
+// ═══════════════════════════════════════════
+// CLIENTES (CARTEIRA)
+// ═══════════════════════════════════════════
+function renderCarteira() {
+  const isAdmin = currentUser?.nivel === 'admin';
+  const userName = currentUser?.nome || '';
+  const q = (document.getElementById('carteira-search')?.value || '').toLowerCase();
+  const respFil = document.getElementById('carteira-fil-resp')?.value || '';
+  const segFil = document.getElementById('carteira-fil-seg')?.value || '';
+
+  let lista = clientes.filter(c => isAdmin || c.responsavel === userName);
+  if (q) lista = lista.filter(c => [c.nome,c.contato,c.whatsapp,c.email,c.segmento,c.responsavel].some(v=>(v||'').toLowerCase().includes(q)));
+  if (respFil) lista = lista.filter(c => c.responsavel === respFil);
+  if (segFil) lista = lista.filter(c => c.segmento === segFil);
+
+  // Populate filter selects
+  const respSel = document.getElementById('carteira-fil-resp');
+  const segSel  = document.getElementById('carteira-fil-seg');
+  if (respSel) {
+    const respVals = [...new Set(clientes.map(c=>c.responsavel).filter(Boolean))].sort();
+    const curResp = respSel.value;
+    respSel.innerHTML = '<option value="">Todos responsáveis</option>' + respVals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    respSel.value = curResp;
+  }
+  if (segSel) {
+    const segVals = [...new Set(clientes.map(c=>c.segmento).filter(Boolean))].sort();
+    const curSeg = segSel.value;
+    segSel.innerHTML = '<option value="">Todos segmentos</option>' + segVals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    segSel.value = curSeg;
+  }
+
+  // KPIs
+  const totalMensal = lista.reduce((s,c)=>s+Number(c.valor_mensal||0),0);
+  const totalAnual  = lista.reduce((s,c)=>s+Number(c.valor_anual||0),0);
+  const tod = today();
+  const comContato = lista.filter(c=>c.proximo_contato&&c.proximo_contato<=tod).length;
+  document.getElementById('carteira-kpis').innerHTML = `
+    <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${lista.length}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Receita mensal</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalMensal)}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Receita anual</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalAnual)}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Contato pendente</div><div class="c-kpi-value" style="color:${comContato>0?'var(--amber)':'var(--text)'}">${comContato}</div></div>`;
+
+  document.getElementById('carteira-count').textContent = `${lista.length} cliente${lista.length!==1?'s':''}`;
+
+  const tbody = document.getElementById('carteira-tbody');
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="list-empty">Nenhum cliente encontrado. Leads "Fechado ✓" são migrados automaticamente após 1 dia.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(c => {
+    const pc = c.proximo_contato;
+    const atrasado = pc && pc < tod;
+    const hoje = pc && pc === tod;
+    const pcClass = atrasado ? 'renovacao-vencida' : hoje ? 'renovacao-alerta' : pc ? 'renovacao-ok' : '';
+    return `<tr onclick="openClienteModal(${c.id})" style="cursor:pointer">
+      <td class="td-main"><div class="lead-name">${esc(c.nome)}</div><div class="lead-contact">${c.cidade?esc(c.cidade)+(c.estado?' / '+esc(c.estado):''):'—'}</div></td>
+      <td><div style="font-weight:500;color:var(--text)">${esc(c.contato||'—')}</div><div style="font-size:11px;color:var(--text3)">${esc(c.email||'')}</div></td>
+      <td>${c.whatsapp?`<a href="https://wa.me/55${(c.whatsapp||'').replace(/\D/g,'')}" onclick="event.stopPropagation()" style="color:var(--blue);text-decoration:none">${esc(c.whatsapp)}</a>`:'—'}</td>
+      <td>${c.segmento?`<span class="chip chip-seg">${esc(c.segmento)}</span>`:'—'}</td>
+      <td>${c.servico?`<span class="chip chip-serv">${esc(c.servico)}</span>`:'—'}</td>
+      <td style="font-family:var(--mono)">${c.valor_mensal?fmt(c.valor_mensal):c.valor_anual?fmt(c.valor_anual)+'/ano':'—'}</td>
+      <td>${esc(c.responsavel||'—')}</td>
+      <td style="font-family:var(--mono)">${fmtDate(c.data_fechamento)}</td>
+      <td><span class="${pcClass}" style="font-family:var(--mono)">${pc?fmtDate(pc)+(atrasado?' ⚠':''):'—'}</span></td>
+      <td><button class="btn-reabrir" style="font-size:11px;padding:4px 9px" onclick="event.stopPropagation();reabrirComoLead(${c.id})">↩ Reabrir</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openClienteModal(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  const ro = !canEdit() ? 'disabled' : '';
+  const segOpts = ['', ...(config.segmentos||[])].map(s=>`<option value="${esc(s)}" ${c.segmento===s?'selected':''}>${esc(s)||'Selecionar...'}</option>`).join('');
+  const servOpts = ['', ...(config.servicos||[])].map(s=>`<option value="${esc(s)}" ${c.servico===s?'selected':''}>${esc(s)||'Selecionar...'}</option>`).join('');
+  const respOpts = ['', ...(config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${c.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
+  const contratoOpts = ['', ...CONTRATO_OPTS].map(x=>`<option value="${esc(x)}" ${c.contrato===x?'selected':''}>${esc(x)||'Selecionar...'}</option>`).join('');
+  document.getElementById('modal-root').innerHTML = `
+  <div class="overlay" id="overlay" onclick="closeOnBg(event)">
+    <div class="modal">
+      <div class="modal-hd"><div class="modal-title">Cliente — ${esc(c.nome)}</div><button class="btn-close" onclick="closeModal()">×</button></div>
+      <div class="modal-section">Dados do cliente</div>
+      <div class="form-grid">
+        <div class="field full"><label>Empresa / Razão social</label><input type="text" id="fc-nome" value="${esc(c.nome)}" ${ro}></div>
+        <div class="field"><label>CNPJ / CPF</label><input type="text" id="fc-cnpj" value="${esc(c.cnpj||'')}" ${ro} oninput="maskCnpjCpf(this)"></div>
+        <div class="field"><label>Cidade</label><input type="text" id="fc-cidade" value="${esc(c.cidade||'')}" ${ro}></div>
+        <div class="field"><label>Estado</label><input type="text" id="fc-estado" value="${esc(c.estado||'')}" maxlength="2" style="text-transform:uppercase" ${ro}></div>
+      </div>
+      <div class="modal-section">Contato</div>
+      <div class="form-grid">
+        <div class="field"><label>Nome do contato</label><input type="text" id="fc-contato" value="${esc(c.contato||'')}" ${ro}></div>
+        <div class="field"><label>WhatsApp / Tel</label><input type="text" id="fc-whatsapp" value="${esc(c.whatsapp||'')}" ${ro}></div>
+        <div class="field full"><label>E-mail</label><input type="text" id="fc-email" value="${esc(c.email||'')}" ${ro}></div>
+      </div>
+      <div class="modal-section">Contrato</div>
+      <div class="form-grid">
+        <div class="field"><label>Segmento</label><select id="fc-segmento" ${ro}>${segOpts}</select></div>
+        <div class="field"><label>Serviço</label><select id="fc-servico" ${ro}>${servOpts}</select></div>
+        <div class="field"><label>Responsável</label><select id="fc-responsavel" ${ro}>${respOpts}</select></div>
+        <div class="field"><label>Periodicidade</label><select id="fc-contrato" ${ro}>${contratoOpts}</select></div>
+        <div class="field"><label>Valor mensal (R$)</label><input type="number" id="fc-valor_mensal" value="${c.valor_mensal||''}" min="0" ${ro}></div>
+        <div class="field"><label>Valor anual (R$)</label><input type="number" id="fc-valor_anual" value="${c.valor_anual||''}" min="0" ${ro}></div>
+        <div class="field"><label>Data de fechamento</label><input type="date" id="fc-data_fechamento" value="${toDateInput(c.data_fechamento)}" ${ro}></div>
+        <div class="field"><label>Renovação em</label><input type="date" id="fc-renovacao" value="${toDateInput(c.renovacao)}" ${ro}></div>
+        <div class="field"><label>Próximo contato</label><input type="date" id="fc-proximo_contato" value="${toDateInput(c.proximo_contato)}" ${ro}></div>
+        <div class="field full"><label>Observações</label><textarea id="fc-obs" ${ro}>${esc(c.obs||'')}</textarea></div>
+      </div>
+      <div class="modal-footer">
+        ${canEdit()?`<button class="btn-del" onclick="deleteCliente(${c.id})">Excluir</button>`:''}
+        <button class="btn-reabrir" onclick="reabrirComoLead(${c.id})">↩ Reabrir como lead</button>
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        ${canEdit()?`<button class="btn-save" onclick="saveClienteModal(${c.id})">Salvar</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function saveClienteModal(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  c.nome = document.getElementById('fc-nome').value.trim();
+  c.cnpj = document.getElementById('fc-cnpj').value.trim();
+  c.cidade = document.getElementById('fc-cidade').value.trim();
+  c.estado = document.getElementById('fc-estado').value.trim().toUpperCase();
+  c.contato = document.getElementById('fc-contato').value.trim();
+  c.whatsapp = document.getElementById('fc-whatsapp').value.trim();
+  c.email = document.getElementById('fc-email').value.trim();
+  c.segmento = document.getElementById('fc-segmento').value;
+  c.servico = document.getElementById('fc-servico').value;
+  c.responsavel = document.getElementById('fc-responsavel').value;
+  c.contrato = document.getElementById('fc-contrato').value;
+  c.valor_mensal = parseFloat(document.getElementById('fc-valor_mensal').value)||0;
+  c.valor_anual = parseFloat(document.getElementById('fc-valor_anual').value)||0;
+  c.data_fechamento = document.getElementById('fc-data_fechamento').value;
+  c.renovacao = document.getElementById('fc-renovacao').value;
+  c.proximo_contato = document.getElementById('fc-proximo_contato').value;
+  c.obs = document.getElementById('fc-obs').value.trim();
+  saveClientes();
+  addHist('edit','Cliente: '+c.nome,'Dados atualizados');
+  closeModal(); renderAll(); toast('Cliente atualizado ✓');
+}
+
+function deleteCliente(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!confirm('Remover este cliente?')) return;
+  clientes = clientes.filter(x => x.id !== id);
+  addHist('hist-delete','Cliente: '+(c?.nome||id),'Removido');
+  saveClientes(); closeModal(); renderAll(); toast('Cliente removido');
+}
+
+function reabrirComoLead(clienteId) {
+  const c = clientes.find(x => x.id === clienteId);
+  if (!c) return;
+  if (!confirm(`Reabrir "${c.nome}" como novo lead no Kanban?\nO registro de cliente será mantido.`)) return;
+  const novoLead = {
+    id: nextId++,
+    data_lead: today(),
+    id_lead: '',
+    empresa: c.nome,
+    cidade: c.cidade||'',
+    estado: c.estado||'',
+    cnpj: c.cnpj||'',
+    segmento: c.segmento||'',
+    origem: 'Cliente atual',
+    contato_nome: c.contato||'',
+    contato_cargo: '',
+    whatsapp: c.whatsapp||'',
+    email: c.email||'',
+    responsavel: c.responsavel||'',
+    stage: 'prospeccao',
+    temperatura: '',
+    servico: c.servico||'',
+    valor: c.valor_mensal||0,
+    data_ultimo_contato: today(),
+    proxima_acao: '',
+    data_followup: '',
+    previsao_fechamento: '',
+    motivo_perda: '',
+    obs: `[Reaberto de cliente em ${fmtDate(today())}] ${c.obs||''}`.trim(),
+  };
+  leads.push(novoLead);
+  addHist('add','Lead: '+novoLead.empresa,'Reaberto a partir da carteira de clientes');
+  saveLeads(); closeModal(); renderAll();
+  toast(`"${c.nome}" reaberto como lead no Kanban ✓`);
+}
+
+// Importar clientes via Excel/CSV
+const CLI_IMPORT_MAP = {
+  nome:      ['nome','empresa','razao social','razão social','company'],
+  contato:   ['contato','nome contato','nome do contato'],
+  whatsapp:  ['whatsapp','telefone','fone','tel','celular','phone'],
+  email:     ['email','e-mail','mail'],
+  segmento:  ['segmento'],
+  servico:   ['servico','serviço','service'],
+  valor_mensal:['valor mensal','valor/mes','valor mensal (r$)','mensalidade'],
+  valor_anual: ['valor anual','valor/ano','valor anual (r$)'],
+  responsavel: ['responsavel','responsável','vendedor'],
+  obs:       ['obs','observacao','observação','observações'],
+  cnpj:      ['cnpj','cpf','cnpj/cpf','documento'],
+};
+
+function importClientes(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => processClienteRows(parseCSV(e.target.result));
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1,defval:''});
+        processClienteRows(rows);
+      } catch(err) { alert('Erro ao ler arquivo: ' + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  input.value = '';
+}
+
+function processClienteRows(rows) {
+  if (!rows || rows.length < 2) { alert('Arquivo vazio ou sem dados.'); return; }
+  const headers = rows[0].map(h => String(h).toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+  const map = {};
+  headers.forEach((h, i) => {
+    for (const [field, aliases] of Object.entries(CLI_IMPORT_MAP)) {
+      if (aliases.some(a => h.includes(a))) { map[field] = i; break; }
+    }
+  });
+  let added = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const nome = map.nome !== undefined ? String(row[map.nome]||'').trim() : '';
+    if (!nome) continue;
+    const jaExiste = clientes.some(c => c.nome && c.nome.toLowerCase() === nome.toLowerCase());
+    if (jaExiste) continue;
+    const cli = { id: nextClienteId++, nome, contato:'', whatsapp:'', email:'', segmento:'', servico:'', tipo_valor:'variavel', valor_mensal:0, valor_anual:0, contrato:'', responsavel:'', inicio:today(), renovacao:'', proximo_contato:'', data_fechamento:today(), obs:'', cnpj:'', cidade:'', estado:'' };
+    for (const [field, idx] of Object.entries(map)) {
+      if (idx !== undefined && row[idx] !== undefined && row[idx] !== '') {
+        const v = String(row[idx]).trim();
+        if (field === 'valor_mensal' || field === 'valor_anual') cli[field] = parseFloat(v.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+        else cli[field] = v;
+      }
+    }
+    clientes.push(cli);
+    added++;
+  }
+  if (added > 0) {
+    saveClientes();
+    addHist('add','Clientes',`${added} cliente(s) importado(s) via arquivo`);
+    renderAll();
+    toast(`${added} cliente(s) importado(s) ✓`);
+  } else {
+    toast('Nenhum cliente novo encontrado (duplicatas ignoradas)');
+  }
+}
 
 // ═══════════════════════════════════════════
 // BOARD SCROLL ARROWS
