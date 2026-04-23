@@ -77,8 +77,8 @@ button,input,select,textarea{font-family:var(--font);}
 .col-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
 .col-count{font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--text3);border-radius:20px;padding:1px 8px;}
 .col-body{display:flex;flex-direction:column;gap:7px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 13px;cursor:pointer;transition:border-color .13s,transform .1s;position:relative;overflow:hidden;}
-.card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 13px;cursor:pointer;transition:border-color .13s,transform .1s,box-shadow .13s;position:relative;overflow:hidden;}
+.card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.07);}
 .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
 .card-name{font-size:13px;font-weight:600;line-height:1.3;}
 .temp-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
@@ -272,16 +272,17 @@ button,input,select,textarea{font-family:var(--font);}
 .base-result-resp{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--blue-bg);color:var(--blue);white-space:nowrap;flex-shrink:0;}
 .base-empty{padding:32px;text-align:center;color:var(--text3);font-size:13px;}
 .overlay{position:fixed;inset:0;background:rgba(20,18,14,.38);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;}
-.modal{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border2);width:560px;max-width:100%;max-height:92vh;overflow-y:auto;padding:24px 26px;animation:up .18s ease;}
+.modal{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border2);width:min(960px,96vw);max-height:94vh;overflow-y:auto;padding:28px 32px;animation:up .18s ease;}
 @keyframes up{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .modal-title{font-size:16px;font-weight:600;}
 .btn-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text3);padding:0 4px;border-radius:4px;line-height:1;}
 .btn-close:hover{background:var(--surface2);color:var(--text);}
 .modal-section{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .field{display:flex;flex-direction:column;gap:4px;}
 .field.full{grid-column:1/-1;}
+.field.half{grid-column:span 2;}
 label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);}
 .field input,.field select,.field textarea{font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color .13s;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border2);background:var(--surface);}
@@ -323,6 +324,33 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
 .btn-reabrir{font-size:12px;padding:7px 13px;border-radius:var(--r-sm);background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);cursor:pointer;font-weight:600;}
 .btn-reabrir:hover{opacity:.82;}
 
+/* CUSTOM MULTI-SELECT DROPDOWN */
+.ms-wrap{position:relative;width:100%;}
+.ms-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px;min-height:38px;transition:border-color .13s;user-select:none;}
+.ms-trigger:hover,.ms-trigger.open{border-color:var(--border2);background:var(--surface);}
+.ms-trigger-tags{display:flex;flex-wrap:wrap;gap:4px;flex:1;}
+.ms-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.ms-tag-x{cursor:pointer;font-size:13px;line-height:1;opacity:.7;}
+.ms-tag-x:hover{opacity:1;}
+.ms-placeholder{color:var(--text3);font-size:13px;}
+.ms-arrow{font-size:11px;color:var(--text3);flex-shrink:0;transition:transform .15s;}
+.ms-trigger.open .ms-arrow{transform:rotate(180deg);}
+.ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:500;max-height:220px;overflow-y:auto;padding:4px 0;}
+.ms-option{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .1s;}
+.ms-option:hover{background:var(--surface2);}
+.ms-option input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.ms-option.checked{color:var(--text);font-weight:500;}
+.ms-empty{padding:12px;text-align:center;font-size:12px;color:var(--text3);}
+
+/* ACTION HISTORY ITEM */
+.acao-item{border-left:3px solid var(--border2);padding:8px 10px;margin-bottom:6px;border-radius:0 var(--r-sm) var(--r-sm) 0;background:var(--surface2);position:relative;}
+.acao-item:hover .acao-btns{opacity:1;}
+.acao-btns{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s;}
+.acao-btn{font-size:11px;padding:2px 8px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;font-family:var(--font);}
+.acao-btn:hover{border-color:var(--border2);color:var(--text);}
+.acao-btn.del:hover{border-color:var(--red-border);color:var(--red);background:var(--red-bg);}
+
+
 /* METAS period toggle */
 .metas-period-toggle{display:flex;gap:4px;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;width:fit-content;}
 
@@ -332,6 +360,9 @@ label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:upperca
   .col{min-width:200px;max-width:200px;margin:0 4px;}
   .dash-grid{grid-template-columns:1fr;}
   .search{width:130px;}
+  .modal{padding:16px;}
+  .form-grid{grid-template-columns:1fr 1fr;}
+  .field.half{grid-column:1/-1;}
 }
 </style>
 </head>
@@ -750,7 +781,17 @@ async function initCloud() {
       sheetsGet('getClientes'), sheetsGet('getHistorico'),
       sheetsGet('getPedidos'), sheetsGet('getBase')
     ]);
-    leads = ld.leads || [];
+    const serverLeads = ld.leads || [];
+    // Recupera historico_acoes do localStorage (campo local que pode não estar no servidor ainda)
+    const localLeads = loadLocal('crm_zinia_v2') || [];
+    const localMap = new Map(localLeads.map(l => [l.id, l]));
+    leads = serverLeads.map(sl => {
+      const local = localMap.get(sl.id);
+      return {
+        ...sl,
+        historico_acoes: (local?.historico_acoes?.length ? local.historico_acoes : sl.historico_acoes) || []
+      };
+    });
     nextId = ld.nextId || (leads.reduce((m,l) => Math.max(m,l.id),0)+1);
     config = {...defaultConfig(),...cd, metas:cd.metas||{}};
     clientes = cl.clientes || [];
@@ -761,6 +802,8 @@ async function initCloud() {
     baseProspeccao = bd.base || [];
     dataReady = true;
     leadsLoadedCount = leads.length;
+    // Salva localStorage atualizado com os historico_acoes mergeados
+    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
     setInterval(autoRefresh, 30000);
@@ -782,7 +825,16 @@ async function autoRefresh() {
       sheetsGet('getLeads'), sheetsGet('getClientes'),
       sheetsGet('getHistorico'), sheetsGet('getPedidos')
     ]);
-    leads = ld.leads || [];
+    const serverLeads = ld.leads || [];
+    // Preserva historico_acoes local — o servidor pode não ter esse campo ainda
+    const localMap = new Map(leads.map(l => [l.id, l]));
+    leads = serverLeads.map(sl => {
+      const local = localMap.get(sl.id);
+      return {
+        ...sl,
+        historico_acoes: (local?.historico_acoes?.length ? local.historico_acoes : sl.historico_acoes) || []
+      };
+    });
     nextId = ld.nextId || (leads.reduce((m,l)=>Math.max(m,l.id),0)+1);
     clientes = cl.clientes || [];
     historico = hi.historico || [];
@@ -825,10 +877,10 @@ async function saveLeads() {
       serverLeads = serverData?.leads || null;
     } catch(e) { serverLeads = null; }
     
-    if (serverLeads && serverLeads.length > leads.length) {
-      // Há mais leads no servidor — merge: preserva leads do servidor que não estão localmente
-      const localIds = new Set(leads.map(l=>l.id));
-      const extraFromServer = serverLeads.filter(sl => !localIds.has(sl.id));
+    if (serverLeads && serverLeads.length > 0) {
+      const localMap = new Map(leads.map(l => [l.id, l]));
+      // Preserva leads do servidor que não estão localmente (adicionados por outro usuário)
+      const extraFromServer = serverLeads.filter(sl => !localMap.has(sl.id));
       if (extraFromServer.length > 0) {
         leads = [...leads, ...extraFromServer];
         leadsLoadedCount = leads.length;
@@ -1085,7 +1137,14 @@ function renderAll() {
 function showFollowupAlert() {
   const bar = document.getElementById('fu-alert-bar');
   const tod = today();
-  const elegivel = leads.filter(l=>l.stage!=='fechado'&&l.stage!=='perdido'&&l.data_ultimo_contato!==tod);
+  const isVendedor = currentUser?.nivel === 'vendedor';
+  const elegivel = leads.filter(l => {
+    if (l.stage==='fechado'||l.stage==='perdido') return false;
+    if (l.data_ultimo_contato===tod) return false;
+    // Vendedor só vê seus próprios leads
+    if (isVendedor && l.responsavel !== currentUser.nome) return false;
+    return true;
+  });
   const atrasados = elegivel.filter(l=>l.data_followup&&l.data_followup<tod).length;
   const hoje = elegivel.filter(l=>l.data_followup===tod).length;
   if (atrasados > 0 || hoje > 0) {
@@ -1223,8 +1282,8 @@ function renderKanban() {
   const filtered = getFiltered();
   const board = document.getElementById('board');
   board.innerHTML = '';
-  STAGES.forEach(st=>{
-    const items = filtered.filter(l=>l.stage===st.id);
+  STAGES.forEach(st => {
+    const items = filtered.filter(l => l.stage === st.id);
     const col = document.createElement('div');
     col.className = 'col';
     col.innerHTML = `<div class="col-head">
@@ -1237,6 +1296,7 @@ function renderKanban() {
   initBoardArrows();
   setTimeout(updateBoardArrows, 50);
 }
+
 
 function cardHTML(l, st) {
   const tc = tempColor(l.temperatura);
@@ -1503,66 +1563,73 @@ function renderDashboard() {
   const tod = today();
   const [ty,tm] = tod.split('-');
   const mesStr = `${ty}-${tm}`;
-  const active = leads.filter(l=>l.stage!=='perdido');
+  const isVendedor = currentUser?.nivel === 'vendedor';
+  // Vendedor só vê seus próprios dados; admin e visualizador veem tudo
+  const dashLeads = isVendedor ? leads.filter(l=>l.responsavel===currentUser.nome) : leads;
+  const dashClientes = isVendedor ? clientes.filter(c=>c.responsavel===currentUser.nome) : clientes;
+  const dashTitle = isVendedor ? ` — ${currentUser.nome.split(' ')[0]}` : '';
+
+  const active = dashLeads.filter(l=>l.stage!=='perdido');
   const pipeline = active.filter(l=>l.stage!=='fechado').reduce((s,l)=>s+Number(l.valor||0),0);
-  const fechados = leads.filter(l=>l.stage==='fechado');
-  const perdidos = leads.filter(l=>l.stage==='perdido');
+  const fechados = dashLeads.filter(l=>l.stage==='fechado');
+  const perdidos = dashLeads.filter(l=>l.stage==='perdido');
   const valorFechado = fechados.reduce((s,l)=>s+Number(l.valor||0),0);
-  const fechadosMes = leads.filter(l=>l.stage==='fechado'&&((l.data_ultimo_contato||'').startsWith(mesStr)||(l.data_lead||'').startsWith(mesStr)));
+  const fechadosMes = dashLeads.filter(l=>l.stage==='fechado'&&((l.data_ultimo_contato||'').startsWith(mesStr)||(l.data_lead||'').startsWith(mesStr)));
   const valorFechadoMes = fechadosMes.reduce((s,l)=>s+Number(l.valor||0),0);
-  const total = leads.length;
+  const total = dashLeads.length;
   const taxaConversao = total > 0 ? Math.round(fechados.length/total*100) : 0;
   const taxaPerda = total > 0 ? Math.round(perdidos.length/total*100) : 0;
-  // Por responsável
+  // Por responsável (só para admin/visualizador)
   const byResp = {};
-  leads.forEach(l=>{
+  dashLeads.forEach(l=>{
     if(!l.responsavel) return;
     if(!byResp[l.responsavel]) byResp[l.responsavel]={ativos:0,fechados:0,valor:0};
     if(l.stage==='fechado'){byResp[l.responsavel].fechados++;byResp[l.responsavel].valor+=Number(l.valor||0);}
     else if(l.stage!=='perdido') byResp[l.responsavel].ativos++;
   });
   const respEntries = Object.entries(byResp).sort((a,b)=>b[1].valor-a[1].valor);
-  const bySegmento={};leads.forEach(l=>{if(l.segmento)bySegmento[l.segmento]=(bySegmento[l.segmento]||0)+1;});
+  const bySegmento={};dashLeads.forEach(l=>{if(l.segmento)bySegmento[l.segmento]=(bySegmento[l.segmento]||0)+1;});
   const segTop=Object.entries(bySegmento).sort((a,b)=>b[1]-a[1]).slice(0,7);
   const maxSeg=segTop[0]?.[1]||1;
   const byServ={};
-  leads.forEach(l=>{
+  dashLeads.forEach(l=>{
     const sl = Array.isArray(l.servicos)&&l.servicos.length?l.servicos:(l.servico?[l.servico]:[]);
     sl.forEach(s=>{ if(s) byServ[s]=(byServ[s]||0)+1; });
   });
   const servTop=Object.entries(byServ).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxServ=servTop[0]?.[1]||1;
-  const byOrigem={};leads.forEach(l=>{if(l.origem)byOrigem[l.origem]=(byOrigem[l.origem]||0)+1;});
+  const byOrigem={};dashLeads.forEach(l=>{if(l.origem)byOrigem[l.origem]=(byOrigem[l.origem]||0)+1;});
   const origemTop=Object.entries(byOrigem).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxOrigem=origemTop[0]?.[1]||1;
-  // Propostas fechadas - manter visível no dashboard
-  const propostasFechadas = leads.filter(l=>l.stage==='fechado');
+  // Propostas fechadas
+  const propostasFechadas = dashLeads.filter(l=>l.stage==='fechado');
   const colors=['#7C3AED','#1447A0','#115E59','#166534','#BA7517','#9D174D','#9A9890'];
   document.getElementById('dash-content').innerHTML = `
+    ${isVendedor ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r-lg)"><span style="font-size:14px">👤</span><span style="font-size:13px;font-weight:600;color:var(--blue)">Visão individual — ${esc(currentUser.nome)}</span></div>` : ''}
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-label">Total de leads</div><div class="kpi-value">${total}</div><div class="kpi-sub">${leads.filter(l=>l.stage!=='fechado'&&l.stage!=='perdido').length} ativos</div></div>
+      <div class="kpi"><div class="kpi-label">Total de leads${dashTitle}</div><div class="kpi-value">${total}</div><div class="kpi-sub">${dashLeads.filter(l=>l.stage!=='fechado'&&l.stage!=='perdido').length} ativos</div></div>
       <div class="kpi"><div class="kpi-label">Pipeline ativo</div><div class="kpi-value" style="font-size:20px">${fmt(pipeline)}</div><div class="kpi-sub">${active.filter(l=>l.stage!=='fechado').length} leads em aberto</div></div>
       <div class="kpi" style="border-color:var(--green-border);background:var(--green-bg)"><div class="kpi-label" style="color:var(--green)">Fechados (total)</div><div class="kpi-value" style="color:var(--green)">${fechados.length}</div><div class="kpi-sub" style="color:var(--green)">${fmt(valorFechado)} · taxa ${taxaConversao}%</div></div>
       <div class="kpi" style="border-color:var(--blue-border)"><div class="kpi-label">Fechados este mês</div><div class="kpi-value" style="font-size:20px;color:var(--blue)">${fmt(valorFechadoMes)}</div><div class="kpi-sub">${fechadosMes.length} propostas</div></div>
       <div class="kpi"><div class="kpi-label">Perdidos</div><div class="kpi-value">${perdidos.length}</div><div class="kpi-sub">taxa ${taxaPerda}%</div></div>
-      <div class="kpi"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${clientes.length}</div><div class="kpi-sub">${fmt(clientes.reduce((s,c)=>s+Number(c.valor_anual||c.valor_mensal*12||0),0))}/ano</div></div>
+      <div class="kpi"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${dashClientes.length}</div><div class="kpi-sub">${fmt(dashClientes.reduce((s,c)=>s+Number(c.valor_anual||c.valor_mensal*12||0),0))}/ano</div></div>
     </div>
     <div class="dash-grid">
       <div class="dash-card"><div class="dash-card-title">Funil por etapa</div>
-        ${STAGES.map(st=>{const count=leads.filter(l=>l.stage===st.id).length;const val=leads.filter(l=>l.stage===st.id).reduce((s,l)=>s+Number(l.valor||0),0);
+        ${STAGES.map(st=>{const count=dashLeads.filter(l=>l.stage===st.id).length;const val=dashLeads.filter(l=>l.stage===st.id).reduce((s,l)=>s+Number(l.valor||0),0);
         return `<div class="funnel-row"><span class="funnel-dot" style="background:${st.color}"></span><span class="funnel-label">${st.label}</span><span class="funnel-count">${count}</span><span class="funnel-val">${fmt(val)}</span></div>`;}).join('')}
       </div>
-      <div class="dash-card"><div class="dash-card-title">Por responsável</div>
+      ${!isVendedor ? `<div class="dash-card"><div class="dash-card-title">Por responsável</div>
         ${respEntries.length ? respEntries.map(([nome,d])=>`<div class="bar-row"><div class="bar-label" title="${esc(nome)}">${esc(nome.split(' ')[0])}</div><div style="flex:1;font-size:11px;color:var(--text2)">${d.ativos} ativos · ${d.fechados} fechados</div><div class="bar-val" style="min-width:80px;text-align:right;font-size:11px">${fmt(d.valor)}</div></div>`).join('') : '<div style="font-size:12px;color:var(--text3)">Sem dados</div>'}
-      </div>
+      </div>` : ''}
       <div class="dash-card"><div class="dash-card-title">Por segmento</div>
-        ${segTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxSeg*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('')}
+        ${segTop.length ? segTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxSeg*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('') : '<div style="font-size:12px;color:var(--text3)">Sem dados</div>'}
       </div>
       <div class="dash-card"><div class="dash-card-title">Por serviço</div>
-        ${servTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxServ*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('')}
+        ${servTop.length ? servTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxServ*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('') : '<div style="font-size:12px;color:var(--text3)">Sem dados</div>'}
       </div>
       <div class="dash-card"><div class="dash-card-title">Por origem</div>
-        ${origemTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxOrigem*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('')}
+        ${origemTop.length ? origemTop.map(([label,val],i)=>`<div class="bar-row"><div class="bar-label" title="${esc(label)}">${esc(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxOrigem*100)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${val}</div></div>`).join('') : '<div style="font-size:12px;color:var(--text3)">Sem dados</div>'}
       </div>
       <div class="dash-card"><div class="dash-card-title" style="display:flex;align-items:center;justify-content:space-between">Propostas Fechadas <span style="font-size:10px;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:10px;font-weight:600">${propostasFechadas.length} total · ${fmt(valorFechado)}</span></div>
         ${propostasFechadas.length ? propostasFechadas.slice(0,8).map(l=>`<div class="bar-row" style="cursor:pointer" onclick="openModal(${l.id})"><div class="bar-label" title="${esc(l.empresa)}">${esc(l.empresa||l.contato_nome)}</div><div style="flex:1;font-size:11px;color:var(--text3)">${esc(l.responsavel||'')}</div><div class="bar-val" style="color:var(--green);min-width:80px;text-align:right">${fmt(l.valor)}</div></div>`).join('') : '<div style="font-size:12px;color:var(--text3)">Nenhuma proposta fechada</div>'}
@@ -1659,30 +1726,52 @@ function openModal(id) {
   const origemOpts=['', ...ORIGEM_OPTS].map(o=>`<option value="${esc(o)}" ${d.origem===o?'selected':''}>${esc(o)||'Selecionar...'}</option>`).join('');
   const cargoOpts=['', ...CARGO_OPTS].map(c=>`<option value="${esc(c)}" ${d.contato_cargo===c?'selected':''}>${esc(c)||'Selecionar...'}</option>`).join('');
   const respOpts=['', ...(config.responsaveis||[])].map(r=>`<option value="${esc(r)}" ${d.responsavel===r?'selected':''}>${esc(r)||'Selecionar...'}</option>`).join('');
-  const servicoOpts=(config.servicos||[]).map(s=>`<option value="${esc(s)}" ${(Array.isArray(d.servicos)?d.servicos:(d.servico?[d.servico]:[])).includes(s)?'selected':''}>${esc(s)}</option>`).join('');
   const segmentoOpts=['', ...(config.segmentos||[])].map(s=>`<option value="${esc(s)}" ${d.segmento===s?'selected':''}>${esc(s)||'Selecionar...'}</option>`).join('');
   const motivoOpts=['', ...MOTIVO_PERDA_OPTS].map(m=>`<option value="${esc(m)}" ${d.motivo_perda===m?'selected':''}>${esc(m)||'Selecionar...'}</option>`).join('');
+  const selectedServicos = Array.isArray(d.servicos) && d.servicos.length ? d.servicos : (d.servico ? [d.servico] : []);
+  const allServicos = config.servicos || [];
+  // Build custom multi-select HTML
+  const msTagsHTML = selectedServicos.length
+    ? selectedServicos.map(s=>`<span class="ms-tag">${esc(s)}<span class="ms-tag-x" onclick="msRemoveTag(event,'${esc(s)}')">×</span></span>`).join('')
+    : `<span class="ms-placeholder">Selecionar serviços...</span>`;
+  const msOptsHTML = allServicos.length
+    ? allServicos.map(s=>`<label class="ms-option${selectedServicos.includes(s)?' checked':''}"><input type="checkbox" value="${esc(s)}" ${selectedServicos.includes(s)?'checked':''} onchange="msToggle(this)">${esc(s)}</label>`).join('')
+    : `<div class="ms-empty">Nenhum serviço cadastrado em Config.</div>`;
   const leadHistory = (d.historico_acoes||[]);
-  const histHTML = leadHistory.length ? leadHistory.map(h=>`<div style="border-left:3px solid var(--border2);padding:6px 10px;margin-bottom:6px;border-radius:0 var(--r-sm) var(--r-sm) 0;background:var(--surface2);">
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:2px">${esc(h.dt)} · <b style="color:var(--text2)">${esc(h.usuario)}</b></div>
-    <div style="font-size:12px;color:var(--text)">${esc(h.acao)}${h.obs?' — '+esc(h.obs):''}</div>
-  </div>`).join('') : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhuma ação registrada ainda.</div>';
+  const histHTML = leadHistory.length
+    ? leadHistory.map((h,hi)=>`<div class="acao-item">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">${esc(h.dt)} · <b style="color:var(--text2)">${esc(h.usuario)}</b></div>
+        <div style="font-size:13px;color:var(--text);font-weight:500">${esc(h.acao)}</div>
+        ${h.obs?`<div style="font-size:12px;color:var(--text2);margin-top:2px">${esc(h.obs)}</div>`:''}
+        ${canEdit()?`<div class="acao-btns">
+          <button class="acao-btn" onclick="editAcaoModal(${d.id},${hi})">✏ Editar</button>
+          <button class="acao-btn del" onclick="deleteAcao(${d.id},${hi})">✕ Excluir</button>
+        </div>`:''}
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhuma ação registrada ainda.</div>';
   const ro=readonly?'disabled':'';
   document.getElementById('modal-root').innerHTML=`
   <div class="overlay" id="overlay" onclick="closeOnBg(event)">
     <div class="modal">
-      <div class="modal-hd"><div class="modal-title">${isNew?'Novo lead':readonly?'Visualizar lead':'Editar lead'}</div>${isNew&&canEdit()?`<button class="btn-buscar-base" onclick="openBaseSearch()" style="margin-right:8px">🔍 Buscar na base</button>`:''}  <button class="btn-close" onclick="closeModal()">×</button></div>
+      <div class="modal-hd"><div class="modal-title">${isNew?'Novo lead':readonly?'Visualizar lead':'Editar lead'}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${isNew&&canEdit()?`<button class="btn-buscar-base" onclick="openBaseSearch()">🔍 Buscar na base</button>`:''}
+          <button class="btn-close" onclick="closeModal()">×</button>
+        </div>
+      </div>
+
       <div class="modal-section">Dados da empresa</div>
       <div class="form-grid">
         <div class="field"><label>Data do lead</label><input type="date" id="f-data_lead" value="${toDateInput(d.data_lead)}" ${ro}></div>
         <div class="field"><label>ID do lead</label><input type="text" id="f-id_lead" value="${esc(d.id_lead)}" placeholder="Ex: 001" ${ro}></div>
-        <div class="field full"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa" ${ro} oninput="checkDuplicate()"><div class="dup-warn" id="dup-warn-empresa"></div></div>
+        <div class="field"><label>Segmento</label><select id="f-segmento" ${ro}>${segmentoOpts}</select></div>
+        <div class="field half"><label>Empresa / Razão social</label><input type="text" id="f-empresa" value="${esc(d.empresa)}" placeholder="Nome da empresa" ${ro} oninput="checkDuplicate()"><div class="dup-warn" id="dup-warn-empresa"></div></div>
+        <div class="field"><label>Origem</label><select id="f-origem" ${ro}>${origemOpts}</select></div>
         <div class="field"><label>Cidade</label><input type="text" id="f-cidade" value="${esc(d.cidade)}" placeholder="Cidade" ${ro}></div>
         <div class="field"><label>Estado (UF)</label><input type="text" id="f-estado" value="${esc(d.estado)}" placeholder="SC" maxlength="2" style="text-transform:uppercase" ${ro}></div>
         <div class="field"><label>CNPJ / CPF</label><input type="text" id="f-cnpj" value="${esc(d.cnpj)}" placeholder="xx.xxx.xxx/0001-xx" ${ro} oninput="maskCnpjCpf(this);checkDuplicate()"><div class="dup-warn" id="dup-warn-cnpj"></div><div style="font-size:11px;color:var(--text3);margin-top:3px" id="cnpj-status"></div></div>
-        <div class="field"><label>Segmento</label><select id="f-segmento" ${ro}>${segmentoOpts}</select></div>
-        <div class="field"><label>Origem</label><select id="f-origem" ${ro}>${origemOpts}</select></div>
       </div>
+
       <div class="modal-section">Contato</div>
       <div class="form-grid">
         <div class="field"><label>Nome do contato</label><input type="text" id="f-contato_nome" value="${esc(d.contato_nome)}" placeholder="Nome completo" ${ro}></div>
@@ -1690,28 +1779,39 @@ function openModal(id) {
         <div class="field"><label>WhatsApp / Tel</label><input type="text" id="f-whatsapp" value="${esc(d.whatsapp)}" placeholder="(xx) 9xxxx-xxxx" ${ro}></div>
         <div class="field"><label>E-mail</label><input type="text" id="f-email" value="${esc(d.email)}" placeholder="email@empresa.com" ${ro}></div>
       </div>
+
       <div class="modal-section">Oportunidade comercial</div>
       <div class="form-grid">
         <div class="field"><label>Responsável</label><select id="f-responsavel" ${ro}>${respOpts}</select></div>
         <div class="field"><label>Etapa do pipeline</label><select id="f-stage" ${ro}>${stageOpts}</select></div>
         <div class="field"><label>Temperatura</label><select id="f-temperatura" ${ro}>${tempOpts}</select></div>
-        <div class="field full"><label>Serviços de interesse <span style="font-size:10px;color:var(--text3);font-weight:400">(Ctrl+clique para selecionar múltiplos)</span></label><select id="f-servico" multiple ${ro} style="height:90px;border-radius:var(--r-sm);border:1px solid var(--border);padding:4px;font-size:13px;width:100%;background:var(--bg);color:var(--text);outline:none;">${servicoOpts}</select></div>
         <div class="field"><label>Valor potencial anual (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0" ${ro}></div>
         <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${toDateInput(d.previsao_fechamento)}" ${ro}></div>
+        <div class="field"><label>Motivo de perda</label><select id="f-motivo_perda" ${ro}>${motivoOpts}</select></div>
+        <div class="field full"><label>Serviços de interesse</label>
+          <div class="ms-wrap" id="ms-wrap">
+            <div class="ms-trigger" id="ms-trigger" onclick="msToggleDropdown()" ${readonly?'style="pointer-events:none;opacity:.6"':''}>
+              <div class="ms-trigger-tags" id="ms-tags">${msTagsHTML}</div>
+              <span class="ms-arrow">▼</span>
+            </div>
+            <div class="ms-dropdown" id="ms-dropdown" style="display:none">${msOptsHTML}</div>
+          </div>
+        </div>
       </div>
+
       <div class="modal-section">Follow-up</div>
       <div class="form-grid">
         <div class="field"><label>Data último contato</label><input type="date" id="f-data_ultimo_contato" value="${toDateInput(d.data_ultimo_contato)}" ${ro}></div>
         <div class="field"><label>Próxima ação</label><select id="f-proxima_acao" ${ro}>${acaoOpts}</select></div>
         <div class="field"><label>Data próximo follow-up</label><input type="date" id="f-data_followup" value="${toDateInput(d.data_followup)}" ${ro}></div>
-        <div class="field"><label>Motivo de perda</label><select id="f-motivo_perda" ${ro}>${motivoOpts}</select></div>
         <div class="field full"><label>Observações</label><textarea id="f-obs" placeholder="Contexto, histórico, próximos passos..." ${ro}>${esc(d.obs)}</textarea></div>
       </div>
+
       ${!isNew?`<div class="modal-section" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Histórico de ações</span>
         ${canEdit()?`<button onclick="openAddAcaoModal(${d.id})" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;">+ Registrar ação</button>`:''}
       </div>
-      <div style="padding:0 20px 12px;max-height:220px;overflow-y:auto;">${histHTML}</div>`:''}
+      <div style="padding:0 0 12px;max-height:260px;overflow-y:auto;">${histHTML}</div>`:''}
 
       <div class="modal-footer">
         ${!isNew&&canEdit()?`<button class="btn-del" onclick="deleteLead(${d.id})">Excluir</button>`:''}
@@ -1726,6 +1826,112 @@ function openModal(id) {
 
 function closeOnBg(e){if(e.target.id==='overlay')closeModal();}
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
+
+// ═══════════════════════════════════════════
+// CUSTOM MULTI-SELECT (Serviços)
+// ═══════════════════════════════════════════
+function msToggleDropdown() {
+  const dd = document.getElementById('ms-dropdown');
+  const trigger = document.getElementById('ms-trigger');
+  if (!dd || !trigger) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+  trigger.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    // close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', msCloseOnOutside, {once: true});
+    }, 0);
+  }
+}
+function msCloseOnOutside(e) {
+  const wrap = document.getElementById('ms-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('ms-dropdown');
+    const trigger = document.getElementById('ms-trigger');
+    if (dd) dd.style.display = 'none';
+    if (trigger) trigger.classList.remove('open');
+  }
+}
+function msToggle(checkbox) {
+  const val = checkbox.value;
+  checkbox.closest('.ms-option').classList.toggle('checked', checkbox.checked);
+  _msRenderTags();
+}
+function msRemoveTag(e, val) {
+  e.stopPropagation();
+  const cb = document.querySelector(`#ms-dropdown input[value="${CSS.escape(val)}"]`);
+  if (cb) { cb.checked = false; cb.closest('.ms-option')?.classList.remove('checked'); }
+  _msRenderTags();
+}
+function _msRenderTags() {
+  const tags = document.getElementById('ms-tags');
+  if (!tags) return;
+  const checked = Array.from(document.querySelectorAll('#ms-dropdown input:checked')).map(cb=>cb.value);
+  if (checked.length === 0) {
+    tags.innerHTML = `<span class="ms-placeholder">Selecionar serviços...</span>`;
+  } else {
+    tags.innerHTML = checked.map(s=>`<span class="ms-tag">${esc(s)}<span class="ms-tag-x" onclick="msRemoveTag(event,'${esc(s)}')">×</span></span>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════
+// EDITAR / EXCLUIR AÇÃO DO LEAD
+// ═══════════════════════════════════════════
+function editAcaoModal(leadId, acaoIdx) {
+  const numId = Number(leadId);
+  const lead = leads.find(l=>Number(l.id)===numId);
+  if (!lead || !lead.historico_acoes || !lead.historico_acoes[acaoIdx]) return;
+  const h = lead.historico_acoes[acaoIdx];
+  const acaoOpts2 = ACAO_OPTS.map(a=>`<option value="${esc(a)}" ${h.acao===a?'selected':''}>${esc(a)}</option>`).join('');
+  const overlay2 = document.createElement('div');
+  overlay2.id = 'overlay2';
+  overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+  overlay2.innerHTML = `<div style="background:var(--surface);border-radius:var(--r-lg);padding:24px 28px;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;">✏ Editar ação</div>
+    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px;">Tipo de ação</label>
+      <select id="acao2-tipo" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font);">${acaoOpts2}</select></div>
+    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px;">Data</label>
+      <input type="text" id="acao2-data" value="${esc(h.dt)}" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font);" placeholder="DD/MM/AAAA"></div>
+    <div style="margin-bottom:16px;"><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px;">Observação</label>
+      <textarea id="acao2-obs" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font);resize:vertical;min-height:60px;">${esc(h.obs||'')}</textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('overlay2').remove()" style="padding:7px 16px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:var(--font);">Cancelar</button>
+      <button onclick="saveEditAcao(${numId},${acaoIdx})" style="padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">Salvar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay2);
+}
+
+function saveEditAcao(leadId, acaoIdx) {
+  const numId = Number(leadId);
+  const idx = leads.findIndex(l=>Number(l.id)===numId);
+  if (idx < 0 || !leads[idx].historico_acoes || !leads[idx].historico_acoes[acaoIdx]) return;
+  leads[idx].historico_acoes[acaoIdx] = {
+    ...leads[idx].historico_acoes[acaoIdx],
+    acao: document.getElementById('acao2-tipo')?.value || leads[idx].historico_acoes[acaoIdx].acao,
+    dt:   document.getElementById('acao2-data')?.value || leads[idx].historico_acoes[acaoIdx].dt,
+    obs:  document.getElementById('acao2-obs')?.value?.trim() || '',
+  };
+  document.getElementById('overlay2')?.remove();
+  saveLeads();
+  addHist('edit', 'Lead: '+(leads[idx].empresa||leads[idx].contato_nome), 'Ação editada');
+  toast('Ação atualizada ✓');
+  openModal(numId);
+}
+
+function deleteAcao(leadId, acaoIdx) {
+  if (!confirm('Excluir este registro de ação?')) return;
+  const numId = Number(leadId);
+  const idx = leads.findIndex(l=>Number(l.id)===numId);
+  if (idx < 0 || !leads[idx].historico_acoes) return;
+  leads[idx].historico_acoes.splice(acaoIdx, 1);
+  saveLeads();
+  addHist('edit', 'Lead: '+(leads[idx].empresa||leads[idx].contato_nome), 'Ação excluída');
+  toast('Ação excluída ✓');
+  openModal(numId);
+}
+
 
 // Register action in lead history
 function openAddAcaoModal(leadId) {
@@ -1804,8 +2010,7 @@ function saveLead(id) {
       if (!confirm('O CNPJ/CPF parece incompleto. Deseja salvar mesmo assim?')) return;
     }
   }
-  const servicoEl = document.getElementById('f-servico');
-  const servicosSel = servicoEl ? Array.from(servicoEl.selectedOptions).map(o=>o.value).filter(Boolean) : [];
+  const servicosSel = Array.from(document.querySelectorAll('#ms-dropdown input[type=checkbox]:checked')).map(cb=>cb.value).filter(Boolean);
   const numId = id && id !== 'null' ? Number(id) : null;
   const prevLead = numId ? leads.find(l=>Number(l.id)===numId) : null;
   const prevStage = prevLead?.stage || null;
