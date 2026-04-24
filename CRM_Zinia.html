@@ -802,11 +802,21 @@ async function initCloud() {
     baseProspeccao = bd.base || [];
     dataReady = true;
     leadsLoadedCount = leads.length;
-    // Salva localStorage atualizado com os historico_acoes mergeados
     localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
+    const pendingQ = _loadOfflineQueue();
+    if (pendingQ.length > 0) {
+      showSyncStatus(`🔄 Sincronizando ${pendingQ.length} alteração(ões) offline...`, 'var(--amber)');
+      await _flushOfflineQueue();
+    }
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
     setInterval(autoRefresh, 30000);
+    // Quando voltar online após ficar offline, sincroniza imediatamente
+    window.addEventListener('online', async () => {
+      showSyncStatus('🔄 Reconectado, sincronizando...', 'var(--amber)');
+      await _flushOfflineQueue();
+      await autoRefresh();
+    });
   } catch(e) {
     showSyncStatus('⚠ Offline — dados locais', 'var(--amber)');
     leads = loadLocal('crm_zinia_v2') || [];
@@ -820,82 +830,145 @@ async function initCloud() {
 
 async function autoRefresh() {
   if (isSyncing) return;
+  await _flushOfflineQueue();
   try {
     const [ld, cl, hi, pd] = await Promise.all([
       sheetsGet('getLeads'), sheetsGet('getClientes'),
       sheetsGet('getHistorico'), sheetsGet('getPedidos')
     ]);
     const serverLeads = ld.leads || [];
-    // Preserva historico_acoes local — o servidor pode não ter esse campo ainda
+    // Merge por timestamp: ganha o registro mais recente campo a campo
     const localMap = new Map(leads.map(l => [l.id, l]));
-    leads = serverLeads.map(sl => {
-      const local = localMap.get(sl.id);
-      return {
-        ...sl,
-        historico_acoes: (local?.historico_acoes?.length ? local.historico_acoes : sl.historico_acoes) || []
-      };
+    const serverMap = new Map(serverLeads.map(l => [l.id, l]));
+    const allIds = new Set([...localMap.keys(), ...serverMap.keys()]);
+    const merged = [];
+    allIds.forEach(id => {
+      const local = localMap.get(id);
+      const server = serverMap.get(id);
+      if (!local) { merged.push({...server, historico_acoes: server.historico_acoes||[]}); return; }
+      if (!server) { merged.push(local); return; }
+      const localTs = local.updated_at || 0;
+      const serverTs = server.updated_at || 0;
+      const base = localTs >= serverTs ? {...local} : {...server};
+      base.historico_acoes = _mergeHistorico(local.historico_acoes||[], server.historico_acoes||[]);
+      merged.push(base);
     });
-    nextId = ld.nextId || (leads.reduce((m,l)=>Math.max(m,l.id),0)+1);
+    leads = merged;
+    nextId = Math.max(ld.nextId||0, leads.reduce((m,l)=>Math.max(m,l.id),0)+1);
     clientes = cl.clientes || [];
     historico = hi.historico || [];
     pedidos = pd.pedidos || [];
     nextPedidoId = pd.nextId || (pedidos.reduce((m,p)=>Math.max(m,p.id),0)+1);
     leadsLoadedCount = leads.length;
+    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
     showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
     renderAll();
-  } catch(e) {}
+  } catch(e) {
+    showSyncStatus('⚠ Sem conexão', 'var(--amber)');
+  }
 }
 
-async function saveLeads() {
-  // Proteção contra apagamento acidental
-  if (!dataReady) {
-    console.warn('saveLeads bloqueado: dados ainda não carregaram do Sheets.');
-    return;
-  }
-  if (leadsLoadedCount > 3 && leads.length < leadsLoadedCount * 0.7) {
-    const diff = leadsLoadedCount - leads.length;
-    const ok = confirm(
-      `⚠️ Atenção: você está prestes a salvar ${leads.length} lead(s), mas havia ${leadsLoadedCount} carregados.\n\n` +
-      `Isso removeria ${diff} lead(s) da planilha.\n\n` +
-      `Confirma que deseja continuar?`
-    );
-    if (!ok) {
-      showSyncStatus('✗ Salvo cancelado pelo usuário', 'var(--red)');
-      return;
-    }
-  }
-  if (isSyncing) return; // evita gravações simultâneas
-  isSyncing = true;
-  showSyncStatus('🔄 Salvando...', 'var(--amber)');
-  localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
-  try {
-    // Merge de segurança: busca estado atual do servidor antes de salvar
-    // para evitar perda de dados com múltiplos usuários simultâneos
-    let serverLeads = null;
+// Mescla dois arrays de historico_acoes eliminando duplicatas por dt+acao+usuario
+function _mergeHistorico(a, b) {
+  const key = h => `${h.dt}|${h.acao}|${h.usuario}`;
+  const seen = new Set(a.map(key));
+  const extra = b.filter(h => !seen.has(key(h)));
+  const all = [...a, ...extra];
+  const parse = s => { const p=(s||'').split('/'); return p.length===3?new Date(`${p[2]}-${p[1]}-${p[0]}`):new Date(0); };
+  return all.sort((x,y) => parse(y.dt) - parse(x.dt));
+}
+
+// ─── FILA OFFLINE ────────────────────────────────────────────────────────────
+const OFFLINE_QUEUE_KEY = 'crm_offline_queue';
+function _loadOfflineQueue() { try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY))||[]; } catch { return []; } }
+function _saveOfflineQueue(q) { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q)); }
+function _enqueueOffline(leadId) {
+  const q = _loadOfflineQueue().filter(x => x.id !== leadId);
+  const lead = leads.find(l => l.id === leadId);
+  if (lead) q.push({ id: leadId, ts: Date.now(), snapshot: JSON.parse(JSON.stringify(lead)) });
+  _saveOfflineQueue(q);
+}
+async function _flushOfflineQueue() {
+  const q = _loadOfflineQueue();
+  if (!q.length) return;
+  const remaining = [];
+  let flushed = 0;
+  for (const item of q) {
     try {
       const serverData = await sheetsGet('getLeads');
-      serverLeads = serverData?.leads || null;
-    } catch(e) { serverLeads = null; }
-    
-    if (serverLeads && serverLeads.length > 0) {
-      const localMap = new Map(leads.map(l => [l.id, l]));
-      // Preserva leads do servidor que não estão localmente (adicionados por outro usuário)
-      const extraFromServer = serverLeads.filter(sl => !localMap.has(sl.id));
-      if (extraFromServer.length > 0) {
-        leads = [...leads, ...extraFromServer];
+      const serverLeads = serverData?.leads || [];
+      const serverLead = serverLeads.find(l => l.id === item.id);
+      const serverTs = serverLead?.updated_at || 0;
+      if (item.snapshot.updated_at >= serverTs) {
+        const updatedLeads = serverLeads.map(l => l.id === item.id ? {
+          ...l,
+          ...item.snapshot,
+          historico_acoes: _mergeHistorico(item.snapshot.historico_acoes||[], l.historico_acoes||[])
+        } : l);
+        if (!serverLead) updatedLeads.push(item.snapshot);
+        await sheetsPost('saveLeads', { leads: updatedLeads, nextId });
+      }
+      flushed++;
+    } catch(e) { remaining.push(item); }
+  }
+  _saveOfflineQueue(remaining);
+  if (flushed > 0) toast(`🔄 ${flushed} alteração(ões) offline sincronizada(s) ✓`);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function saveLeads() {
+  if (!dataReady) { console.warn('saveLeads bloqueado: dados não carregaram ainda.'); return; }
+  if (leadsLoadedCount > 3 && leads.length < leadsLoadedCount * 0.7) {
+    const diff = leadsLoadedCount - leads.length;
+    if (!confirm(`⚠️ Você está prestes a salvar ${leads.length} leads, mas havia ${leadsLoadedCount}.\nIsso removeria ${diff} lead(s). Confirma?`)) {
+      showSyncStatus('✗ Cancelado pelo usuário', 'var(--red)'); return;
+    }
+  }
+  // Sempre persiste localmente primeiro — dado nunca se perde
+  localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
+
+  if (isSyncing) {
+    // Save em andamento — enfileira alterações recentes para envio posterior
+    leads.filter(l => l.updated_at && Date.now()-l.updated_at < 10000).forEach(l => _enqueueOffline(l.id));
+    return;
+  }
+  isSyncing = true;
+  showSyncStatus('🔄 Salvando...', 'var(--amber)');
+  try {
+    // Merge antes de salvar: preserva leads de outros usuários e histórico do servidor
+    let serverLeads = null;
+    try { serverLeads = (await sheetsGet('getLeads'))?.leads || null; } catch { serverLeads = null; }
+    if (serverLeads) {
+      const serverMap = new Map(serverLeads.map(l => [l.id, l]));
+      const extra = serverLeads.filter(sl => !leads.find(l => l.id === sl.id));
+      if (extra.length) {
+        leads = [...leads, ...extra];
         leadsLoadedCount = leads.length;
         localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
         renderAll();
-        toast(`⚠ ${extraFromServer.length} lead(s) adicionados por outro usuário foram preservados`);
+        toast(`⚠ ${extra.length} lead(s) de outro usuário adicionados`);
       }
+      // Mescla historico_acoes do servidor em cada lead local
+      leads = leads.map(local => {
+        const server = serverMap.get(local.id);
+        if (!server) return local;
+        return { ...local, historico_acoes: _mergeHistorico(local.historico_acoes||[], server.historico_acoes||[]) };
+      });
     }
-    
     await sheetsPost('saveLeads', {leads, nextId});
     leadsLoadedCount = leads.length;
+    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
+    _saveOfflineQueue([]); // limpa fila — estado completo foi salvo
     showSyncStatus('✓ Salvo ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
-  } catch(e) { showSyncStatus('⚠ Salvo localmente', 'var(--amber)'); }
+  } catch(e) {
+    // Offline — enfileira os leads modificados recentemente
+    leads.filter(l => l.updated_at && Date.now()-l.updated_at < 120000).forEach(l => _enqueueOffline(l.id));
+    const qLen = _loadOfflineQueue().length;
+    showSyncStatus(`⚠ Offline · ${qLen} na fila`, 'var(--amber)');
+  }
   isSyncing = false;
 }
+
 
 async function saveClientes() {
   localStorage.setItem('crm_clientes', JSON.stringify(clientes));
@@ -1970,6 +2043,8 @@ function saveAcaoLead(leadId) {
   if(!leads[idx].historico_acoes) leads[idx].historico_acoes = [];
   const dtFormatted = data ? toDateInput(data).replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1') : new Date().toLocaleDateString('pt-BR');
   leads[idx].historico_acoes.unshift({ dt: dtFormatted, usuario: currentUser.nome, acao: tipo, obs });
+  leads[idx].updated_at = Date.now();
+  leads[idx].updated_by = currentUser.nome;
   // Update data_ultimo_contato if action date is today
   const tod = today();
   if(data === tod) leads[idx].data_ultimo_contato = tod;
@@ -2040,9 +2115,10 @@ function saveLead(id) {
     obs:document.getElementById('f-obs').value.trim(),
   };
   const entidade = empresa||contato;
+  const now_ts = Date.now();
   if(numId){
     const idx=leads.findIndex(l=>Number(l.id)===numId);
-    leads[idx]={...leads[idx],...obj, historico_acoes: leads[idx].historico_acoes||[]};
+    leads[idx]={...leads[idx],...obj, historico_acoes: leads[idx].historico_acoes||[], updated_at: now_ts, updated_by: currentUser.nome};
     // Stamp timestamp when moved to fechado for 24h migration control
     if(obj.stage === 'fechado' && prevStage !== 'fechado') {
       leads[idx].data_fechado_ts = Date.now();
@@ -2064,7 +2140,7 @@ function saveLead(id) {
     }
     toast('Lead atualizado ✓');
   } else {
-    leads.push({id:nextId++,...obj, historico_acoes:[]});
+    leads.push({id:nextId++,...obj, historico_acoes:[], updated_at: now_ts, updated_by: currentUser.nome});
     addHist('add','Lead: '+entidade,'Novo lead adicionado');
     // Marcar empresa na base como "em prospecção" se veio da busca
     if (window._baseItemSelecionado) {
