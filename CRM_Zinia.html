@@ -673,6 +673,7 @@ let isSyncing = false;
 let dataReady = false;       // true apenas após carregar dados do Sheets com sucesso
 let leadsLoadedCount = 0;    // quantos leads vieram do Sheets no último carregamento
 let baseProspeccao = [];     // banco de empresas pré-cadastradas
+let deletedLeadIds = new Set(JSON.parse(localStorage.getItem('crm_deleted_ids')||'[]')); // IDs de leads excluídos
 
 // ═══════════════════════════════════════════
 // LOGIN
@@ -843,6 +844,8 @@ async function autoRefresh() {
     const allIds = new Set([...localMap.keys(), ...serverMap.keys()]);
     const merged = [];
     allIds.forEach(id => {
+      // Nunca reinsere leads que foram explicitamente deletados
+      if (deletedLeadIds.has(Number(id))) return;
       const local = localMap.get(id);
       const server = serverMap.get(id);
       if (!local) { merged.push({...server, historico_acoes: server.historico_acoes||[]}); return; }
@@ -940,7 +943,7 @@ async function saveLeads() {
     try { serverLeads = (await sheetsGet('getLeads'))?.leads || null; } catch { serverLeads = null; }
     if (serverLeads) {
       const serverMap = new Map(serverLeads.map(l => [l.id, l]));
-      const extra = serverLeads.filter(sl => !leads.find(l => l.id === sl.id));
+      const extra = serverLeads.filter(sl => !leads.find(l => l.id === sl.id) && !deletedLeadIds.has(Number(sl.id)));
       if (extra.length) {
         leads = [...leads, ...extra];
         leadsLoadedCount = leads.length;
@@ -1215,7 +1218,7 @@ function showFollowupAlert() {
     if (l.stage==='fechado'||l.stage==='perdido') return false;
     if (l.data_ultimo_contato===tod) return false;
     // Vendedor só vê seus próprios leads
-    if (isVendedor && l.responsavel !== currentUser.nome) return false;
+    if (isVendedor && (l.responsavel||'').trim().toLowerCase() !== (currentUser.nome||'').trim().toLowerCase()) return false;
     return true;
   });
   const atrasados = elegivel.filter(l=>l.data_followup&&l.data_followup<tod).length;
@@ -1343,7 +1346,7 @@ function getFiltered() {
     if(temp&&l.temperatura!==temp)return false;
     if(serv&&l.servico!==serv)return false;
     // vendedor só vê seus próprios leads
-    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&l.responsavel!==currentUser.nome)return false;
+    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&(l.responsavel||'').trim().toLowerCase()!==(currentUser.nome||'').trim().toLowerCase())return false;
     return true;
   });
 }
@@ -1417,7 +1420,7 @@ function getListFiltered() {
     if(seg&&l.segmento!==seg)return false;
     if(temp&&l.temperatura!==temp)return false;
     if(serv&&l.servico!==serv)return false;
-    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&l.responsavel!==currentUser.nome)return false;
+    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&(l.responsavel||'').trim().toLowerCase()!==(currentUser.nome||'').trim().toLowerCase())return false;
     return true;
   });
 }
@@ -2168,6 +2171,9 @@ function deleteLead(id) {
 
   if (!confirm(msg)) return;
   leads = leads.filter(x=>Number(x.id)!==numId);
+  // Registra o ID como deletado para evitar que o merge do servidor o reinsira
+  deletedLeadIds.add(numId);
+  localStorage.setItem('crm_deleted_ids', JSON.stringify([...deletedLeadIds]));
   addHist('hist-delete','Lead: '+(l?.empresa||l?.contato_nome||id),'Removido');
 
   // Restaurar empresa na base de prospecção se o lead veio de lá
