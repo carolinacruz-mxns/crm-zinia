@@ -636,7 +636,7 @@ const TEMP_OPTS = ['Frio (empresa ainda exploratória, sem demanda clara)','Morn
 const ACAO_OPTS = ['WhatsApp','Ligação','E-mail','Visita','Reunião online','Enviar proposta','Aguardar retorno'];
 const ORIGEM_OPTS = ['Indicação de cliente','Cliente atual','Redes sociais','Site','Prospecção Ativa (Visita)','Prospecção Ativa (Ligação)','Prospecção Ativa (E-mail)','Evento / feira','Parceiro'];
 const MOTIVO_PERDA_OPTS = ['Preço','Prazo','Acreditação','Logística','Certificação','Não precisa mais','Concorrência','Sem retorno'];
-const CARGO_OPTS = ['Responsável Técnico','Administrativo','Proprietário','Diretor','Gerente','Comprador','Outro'];
+const CARGO_OPTS = ['Responsável Técnico','Administrativo','Proprietário','Diretor','Gerente','Compras','Qualidade','Outro'];
 const CONTRATO_OPTS = ['Mensal','Trimestral','Semestral','Anual'];
 
 // Usuários padrão (fallback se Sheets não carregar)
@@ -1219,6 +1219,8 @@ function showFollowupAlert() {
     if (l.data_ultimo_contato===tod) return false;
     // Vendedor só vê seus próprios leads
     if (isVendedor && (l.responsavel||'').trim().toLowerCase() !== (currentUser.nome||'').trim().toLowerCase()) return false;
+    // Leads sem responsável definido não aparecem para vendedores
+    if (isVendedor && !l.responsavel) return false;
     return true;
   });
   const atrasados = elegivel.filter(l=>l.data_followup&&l.data_followup<tod).length;
@@ -1346,7 +1348,11 @@ function getFiltered() {
     if(temp&&l.temperatura!==temp)return false;
     if(serv&&l.servico!==serv)return false;
     // vendedor só vê seus próprios leads
-    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&(l.responsavel||'').trim().toLowerCase()!==(currentUser.nome||'').trim().toLowerCase())return false;
+    if(currentUser&&currentUser.nivel==='vendedor'){
+      const lResp=(l.responsavel||'').trim().toLowerCase();
+      const uNome=(currentUser.nome||'').trim().toLowerCase();
+      if(lResp!==uNome)return false;
+    }
     return true;
   });
 }
@@ -1394,7 +1400,7 @@ function cardHTML(l, st) {
       ${l.whatsapp?`<div>📞 ${esc(l.whatsapp)}</div>`:''}
       ${l.origem?`<div style="font-size:10px;color:var(--text3)">🔗 ${esc(l.origem)}</div>`:''}
     </div>
-    ${l.valor?`<div class="card-value">${fmt(l.valor)}/ano</div>`:''}
+    ${l.valor?`<div class="card-value">${fmt(l.valor)}/ano${l.valor_orcado?` · <span style="color:var(--text3);font-size:11px">Orç: ${fmt(l.valor_orcado)}</span>`:''}</div>`:''}
     <div class="card-footer">
       ${l.segmento?`<span class="chip chip-seg">${esc(l.segmento)}</span>`:''}
       ${servList.map(s=>`<span class="chip chip-serv">${esc(s)}</span>`).join('')}
@@ -1420,7 +1426,11 @@ function getListFiltered() {
     if(seg&&l.segmento!==seg)return false;
     if(temp&&l.temperatura!==temp)return false;
     if(serv&&l.servico!==serv)return false;
-    if(currentUser&&currentUser.nivel==='vendedor'&&l.responsavel&&(l.responsavel||'').trim().toLowerCase()!==(currentUser.nome||'').trim().toLowerCase())return false;
+    if(currentUser&&currentUser.nivel==='vendedor'){
+      const lResp=(l.responsavel||'').trim().toLowerCase();
+      const uNome=(currentUser.nome||'').trim().toLowerCase();
+      if(lResp!==uNome)return false;
+    }
     return true;
   });
 }
@@ -1851,9 +1861,13 @@ function openModal(id) {
       <div class="modal-section">Contato</div>
       <div class="form-grid">
         <div class="field"><label>Nome do contato</label><input type="text" id="f-contato_nome" value="${esc(d.contato_nome)}" placeholder="Nome completo" ${ro}></div>
-        <div class="field"><label>Cargo</label><select id="f-contato_cargo" ${ro}>${cargoOpts}</select></div>
+        <div class="field"><label>Cargo/Setor</label><select id="f-contato_cargo" ${ro}>${cargoOpts}</select></div>
         <div class="field"><label>WhatsApp / Tel</label><input type="text" id="f-whatsapp" value="${esc(d.whatsapp)}" placeholder="(xx) 9xxxx-xxxx" ${ro}></div>
         <div class="field"><label>E-mail</label><input type="text" id="f-email" value="${esc(d.email)}" placeholder="email@empresa.com" ${ro}></div>
+        <div class="field"><label>Nome do 2º contato</label><input type="text" id="f-contato2_nome" value="${esc(d.contato2_nome||'')}" placeholder="Nome completo" ${ro}></div>
+        <div class="field"><label>Cargo/Setor 2º</label><select id="f-contato2_cargo" ${ro}>${['', ...CARGO_OPTS].map(c=>`<option value="${esc(c)}" ${(d.contato2_cargo||'')===c?'selected':''}>${esc(c)||'Selecionar...'}</option>`).join('')}</select></div>
+        <div class="field"><label>WhatsApp 2º contato</label><input type="text" id="f-contato2_whatsapp" value="${esc(d.contato2_whatsapp||'')}" placeholder="(xx) 9xxxx-xxxx" ${ro}></div>
+        <div class="field"><label>E-mail 2º contato</label><input type="text" id="f-contato2_email" value="${esc(d.contato2_email||'')}" placeholder="email@empresa.com" ${ro}></div>
       </div>
 
       <div class="modal-section">Oportunidade comercial</div>
@@ -1862,6 +1876,7 @@ function openModal(id) {
         <div class="field"><label>Etapa do pipeline</label><select id="f-stage" ${ro}>${stageOpts}</select></div>
         <div class="field"><label>Temperatura</label><select id="f-temperatura" ${ro}>${tempOpts}</select></div>
         <div class="field"><label>Valor potencial anual (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0" ${ro}></div>
+        <div class="field"><label>Valor orçado (R$)</label><input type="number" id="f-valor_orcado" value="${d.valor_orcado||''}" placeholder="0" min="0" ${ro} title="Valor do orçamento enviado para comparar com o valor anual estimado"></div>
         <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${toDateInput(d.previsao_fechamento)}" ${ro}></div>
         <div class="field"><label>Motivo de perda</label><select id="f-motivo_perda" ${ro}>${motivoOpts}</select></div>
         <div class="field full"><label>Serviços de interesse</label>
@@ -1898,10 +1913,81 @@ function openModal(id) {
   </div>`;
   // Aplica máscara CNPJ e checa duplicata em leads existentes
   setTimeout(_initModalCnpj, 50);
+  // Auto-save: restaura rascunho do localStorage se houver
+  setTimeout(_restoreModalDraft, 80);
+  // Auto-save: salva rascunho ao alterar qualquer campo
+  setTimeout(_initModalAutosave, 120);
 }
 
 function closeOnBg(e){if(e.target.id==='overlay')closeModal();}
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
+
+// ═══════════════════════════════════════════
+// AUTO-SAVE RASCUNHO DO MODAL
+// ═══════════════════════════════════════════
+function _getModalDraftKey() {
+  // chave baseada no ID do lead (null = novo)
+  const btn = document.querySelector('.btn-save[onclick]');
+  if (!btn) return null;
+  const m = btn.getAttribute('onclick').match(/saveLead\(([^)]+)\)/);
+  return m ? 'crm_draft_' + m[1] : null;
+}
+
+function _collectModalFields() {
+  const ids = ['f-data_lead','f-id_lead','f-segmento','f-empresa','f-origem','f-cidade','f-estado','f-cnpj',
+    'f-contato_nome','f-contato_cargo','f-whatsapp','f-email',
+    'f-contato2_nome','f-contato2_cargo','f-contato2_whatsapp','f-contato2_email',
+    'f-responsavel','f-stage','f-temperatura','f-valor','f-valor_orcado',
+    'f-previsao_fechamento','f-motivo_perda','f-data_ultimo_contato','f-proxima_acao','f-data_followup','f-obs'];
+  const draft = {};
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) draft[id] = el.value;
+  });
+  // Serviços multi-select
+  const checked = Array.from(document.querySelectorAll('#ms-dropdown input[type=checkbox]:checked')).map(cb=>cb.value);
+  draft['_servicos'] = checked;
+  return draft;
+}
+
+function _saveModalDraft() {
+  const key = _getModalDraftKey();
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify(_collectModalFields())); } catch(e) {}
+}
+
+function _restoreModalDraft() {
+  const key = _getModalDraftKey();
+  if (!key) return;
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(key)); } catch(e) { return; }
+  if (!draft) return;
+  Object.entries(draft).forEach(([id, val]) => {
+    if (id === '_servicos') return;
+    const el = document.getElementById(id);
+    if (el && val !== undefined) el.value = val;
+  });
+  // Restaura multi-select serviços
+  if (draft['_servicos'] && draft['_servicos'].length) {
+    document.querySelectorAll('#ms-dropdown input[type=checkbox]').forEach(cb => {
+      cb.checked = draft['_servicos'].includes(cb.value);
+      cb.closest('.ms-option')?.classList.toggle('checked', cb.checked);
+    });
+    _msRenderTags();
+  }
+  toast('📝 Rascunho restaurado automaticamente');
+}
+
+function _initModalAutosave() {
+  const modal = document.querySelector('.modal');
+  if (!modal) return;
+  modal.addEventListener('input', _saveModalDraft);
+  modal.addEventListener('change', _saveModalDraft);
+}
+
+function _clearModalDraft(id) {
+  try { localStorage.removeItem('crm_draft_' + id); } catch(e) {}
+}
 
 // ═══════════════════════════════════════════
 // CUSTOM MULTI-SELECT (Serviços)
@@ -2104,12 +2190,17 @@ function saveLead(id) {
     contato_cargo:document.getElementById('f-contato_cargo').value,
     whatsapp:document.getElementById('f-whatsapp').value.trim(),
     email:document.getElementById('f-email').value.trim(),
+    contato2_nome:document.getElementById('f-contato2_nome').value.trim(),
+    contato2_cargo:document.getElementById('f-contato2_cargo').value,
+    contato2_whatsapp:document.getElementById('f-contato2_whatsapp').value.trim(),
+    contato2_email:document.getElementById('f-contato2_email').value.trim(),
     responsavel:document.getElementById('f-responsavel').value,
     stage:document.getElementById('f-stage').value,
     temperatura:document.getElementById('f-temperatura').value,
     servicos:servicosSel,
     servico:servicosSel[0]||'',
     valor:parseFloat(document.getElementById('f-valor').value)||0,
+    valor_orcado:parseFloat(document.getElementById('f-valor_orcado').value)||0,
     data_ultimo_contato:document.getElementById('f-data_ultimo_contato').value,
     proxima_acao:document.getElementById('f-proxima_acao').value,
     data_followup:document.getElementById('f-data_followup').value,
@@ -2153,6 +2244,8 @@ function saveLead(id) {
     }
     toast('Lead adicionado ✓');
   }
+  // Limpa rascunho salvo após salvar com sucesso
+  _clearModalDraft(numId || 'null');
   saveLeads(); closeModal(); renderAll();
 }
 
