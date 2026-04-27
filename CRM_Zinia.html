@@ -1048,9 +1048,7 @@ function daysDiff(d){if(!d)return null;const a=new Date(d),b=new Date();a.setHou
 function fmtDate(s){if(!s)return '—';return toDateInput(s).replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1')||'—';}
 function fmtDT(s){if(!s)return '—';const d=new Date(s);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}
-// Normaliza string para comparação: remove acentos, espaços extras e converte para minúsculas
 function normStr(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
-// Compara dois nomes de responsável de forma tolerante a acentos e espaços
 function sameResp(a,b){return normStr(a)===normStr(b);}
 // Normaliza qualquer formato de data para AAAA-MM-DD (necessário para input type="date")
 function toDateInput(s){
@@ -1220,7 +1218,8 @@ function showFollowupAlert() {
   const isVendedor = currentUser?.nivel === 'vendedor';
   const elegivel = leads.filter(l => {
     if (l.stage==='fechado'||l.stage==='perdido') return false;
-    if (l.data_ultimo_contato===tod) return false;
+    // Oculta só se contactado hoje E sem follow-up futuro agendado
+    if (l.data_ultimo_contato===tod && (!l.data_followup || l.data_followup <= tod)) return false;
     // Vendedor só vê seus próprios leads
     if (isVendedor && !sameResp(l.responsavel, currentUser.nome)) return false;
     return true;
@@ -1491,8 +1490,8 @@ function renderFollowup() {
   const tod = today();
   const all = getFiltered().filter(l=>{
     if(l.stage==='fechado'||l.stage==='perdido') return false;
-    // Sair do follow-up se contato foi realizado hoje
-    if(l.data_ultimo_contato === tod) return false;
+    // Oculta só se contactado hoje E sem follow-up futuro agendado
+    if(l.data_ultimo_contato === tod && (!l.data_followup || l.data_followup <= tod)) return false;
     return true;
   });
   const overdue = all.filter(l=>l.data_followup&&l.data_followup<tod).sort((a,b)=>a.data_followup.localeCompare(b.data_followup));
@@ -1870,7 +1869,6 @@ function openModal(id) {
         <div class="field"><label>Etapa do pipeline</label><select id="f-stage" ${ro}>${stageOpts}</select></div>
         <div class="field"><label>Temperatura</label><select id="f-temperatura" ${ro}>${tempOpts}</select></div>
         <div class="field"><label>Valor potencial anual (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0" ${ro}></div>
-        <div class="field"><label>Valor orçado (R$)</label><input type="number" id="f-valor_orcado" value="${d.valor_orcado||''}" placeholder="0" min="0" ${ro} title="Valor do orçamento enviado — para comparar com o valor anual estimado"></div>
         <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${toDateInput(d.previsao_fechamento)}" ${ro}></div>
         <div class="field"><label>Motivo de perda</label><select id="f-motivo_perda" ${ro}>${motivoOpts}</select></div>
         <div class="field full"><label>Serviços de interesse</label>
@@ -1907,7 +1905,6 @@ function openModal(id) {
   </div>`;
   // Aplica máscara CNPJ e checa duplicata em leads existentes
   setTimeout(_initModalCnpj, 50);
-  // Auto-save: restaura rascunho e inicia listener
   setTimeout(_restoreModalDraft, 80);
   setTimeout(_initModalAutosave, 120);
 }
@@ -2422,7 +2419,7 @@ function openBaseSearch() {
   const isAdmin = currentUser?.nivel === 'admin';
   // Vendedor vê só as suas; admin vê todas disponíveis
   const disponiveis = baseProspeccao.filter(b =>
-    b.status === 'livre' && (isAdmin || !b.responsavel || sameResp(b.responsavel, userName))
+    b.status === 'livre' && (isAdmin || !b.responsavel || b.responsavel === userName)
   );
 
   document.getElementById('modal-root').innerHTML = `
@@ -2517,7 +2514,7 @@ function renderBaseView() {
 
   // Vendedor vê só as suas; admin vê todas
   let lista = baseProspeccao.filter(b =>
-    isAdmin || !b.responsavel || sameResp(b.responsavel, userName)
+    isAdmin || !b.responsavel || b.responsavel === userName
   );
 
   if (q) lista = lista.filter(b =>
