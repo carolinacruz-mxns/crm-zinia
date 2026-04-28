@@ -703,6 +703,11 @@ async function checkLogin() {
 }
 
 function doLogout() {
+  // FIX: Para o autoRefresh ao fazer logout
+  if (window._autoRefreshInterval) {
+    clearInterval(window._autoRefreshInterval);
+    window._autoRefreshInterval = null;
+  }
   sessionStorage.removeItem('crm_user');
   currentUser = null;
   document.getElementById('app').style.display = 'none';
@@ -811,13 +816,19 @@ async function initCloud() {
     }
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
-    setInterval(autoRefresh, 30000);
+    // FIX: Evita acumular múltiplos intervalos se o usuário fizer logout/login
+    if (!window._autoRefreshInterval) {
+      window._autoRefreshInterval = setInterval(autoRefresh, 30000);
+    }
     // Quando voltar online após ficar offline, sincroniza imediatamente
-    window.addEventListener('online', async () => {
-      showSyncStatus('🔄 Reconectado, sincronizando...', 'var(--amber)');
-      await _flushOfflineQueue();
-      await autoRefresh();
-    });
+    if (!window._onlineListenerSet) {
+      window._onlineListenerSet = true;
+      window.addEventListener('online', async () => {
+        showSyncStatus('🔄 Reconectado, sincronizando...', 'var(--amber)');
+        await _flushOfflineQueue();
+        await autoRefresh();
+      });
+    }
   } catch(e) {
     showSyncStatus('⚠ Offline — dados locais', 'var(--amber)');
     leads = loadLocal('crm_zinia_v2') || [];
@@ -825,11 +836,15 @@ async function initCloud() {
     clientes = loadLocal('crm_clientes') || [];
     historico = loadLocal('crm_historico') || [];
     pedidos = loadLocal('crm_pedidos') || [];
+    // FIX: dataReady=true mesmo offline; os dados locais são a fonte verdade
+    dataReady = true;
+    leadsLoadedCount = leads.length;
     renderAll();
   }
 }
 
 async function autoRefresh() {
+  // FIX: Não atualiza enquanto um save está em andamento (evita sobrescrever dados locais)
   if (isSyncing) return;
   await _flushOfflineQueue();
   try {
@@ -938,28 +953,41 @@ async function saveLeads() {
   }
   isSyncing = true;
   showSyncStatus('🔄 Salvando...', 'var(--amber)');
+  // FIX: captura snapshot dos leads no momento do save para evitar race condition
+  // se outro evento modificar o array durante o await abaixo
+  const leadsSnapshot = JSON.parse(JSON.stringify(leads));
+  const nextIdSnapshot = nextId;
   try {
     // Merge antes de salvar: preserva leads de outros usuários e histórico do servidor
     let serverLeads = null;
     try { serverLeads = (await sheetsGet('getLeads'))?.leads || null; } catch { serverLeads = null; }
     if (serverLeads) {
       const serverMap = new Map(serverLeads.map(l => [l.id, l]));
-      const extra = serverLeads.filter(sl => !leads.find(l => l.id === sl.id) && !deletedLeadIds.has(Number(sl.id)));
+      // FIX: usa leadsSnapshot para o merge, não o array global que pode ter mudado
+      const extra = serverLeads.filter(sl => !leadsSnapshot.find(l => l.id === sl.id) && !deletedLeadIds.has(Number(sl.id)));
       if (extra.length) {
-        leads = [...leads, ...extra];
+        // Adiciona os extras tanto no snapshot quanto no array global
+        for (const e of extra) { leadsSnapshot.push(e); if (!leads.find(l => l.id === e.id)) leads.push(e); }
         leadsLoadedCount = leads.length;
         localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
         renderAll();
         toast(`⚠ ${extra.length} lead(s) de outro usuário adicionados`);
       }
-      // Mescla historico_acoes do servidor em cada lead local
-      leads = leads.map(local => {
+      // Mescla historico_acoes do servidor em cada lead do snapshot
+      const mergedSnapshot = leadsSnapshot.map(local => {
         const server = serverMap.get(local.id);
         if (!server) return local;
         return { ...local, historico_acoes: _mergeHistorico(local.historico_acoes||[], server.historico_acoes||[]) };
       });
+      await sheetsPost('saveLeads', {leads: mergedSnapshot, nextId: nextIdSnapshot});
+      // Sincroniza o historico_acoes mesclado de volta ao array global
+      mergedSnapshot.forEach(ms => {
+        const gi = leads.findIndex(l => l.id === ms.id);
+        if (gi >= 0) leads[gi].historico_acoes = ms.historico_acoes;
+      });
+    } else {
+      await sheetsPost('saveLeads', {leads: leadsSnapshot, nextId: nextIdSnapshot});
     }
-    await sheetsPost('saveLeads', {leads, nextId});
     leadsLoadedCount = leads.length;
     localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
     _saveOfflineQueue([]); // limpa fila — estado completo foi salvo
@@ -2170,12 +2198,38 @@ function saveLead(id) {
       return;
     }
     if (cnpjRaw.length !== 11 && cnpjRaw.length !== 14) {
-      // tamanho diferente — pode ser digitação incompleta, apenas avisa
       if (!confirm('O CNPJ/CPF parece incompleto. Deseja salvar mesmo assim?')) return;
     }
   }
-  const servicosSel = Array.from(document.querySelectorAll('#ms-dropdown input[type=checkbox]:checked')).map(cb=>cb.value).filter(Boolean);
+
+  // FIX: Bloqueio de duplicata por CNPJ (hard block) — não deixa salvar
   const numId = id && id !== 'null' ? Number(id) : null;
+  if (cnpjRaw.length >= 11) {
+    const fontesCnpj = [
+      ...leads.filter(l => numId === null || Number(l.id) !== numId).map(l => ({ tipo:'Lead', nome:(l.empresa||l.contato_nome||''), cnpj:(l.cnpj||'').replace(/\D/g,''), resp:l.responsavel })),
+      ...clientes.map(c => ({ tipo:'Cliente', nome:(c.nome||''), cnpj:(c.cnpj||'').replace(/\D/g,''), resp:c.responsavel })),
+    ];
+    const dupCnpj = fontesCnpj.find(f => f.cnpj && f.cnpj === cnpjRaw);
+    if (dupCnpj) {
+      alert(`⚠ CNPJ/CPF já cadastrado!\n\n"${dupCnpj.nome}" já existe como ${dupCnpj.tipo}${dupCnpj.resp?' (Resp: '+dupCnpj.resp+')':''}.\n\nNão é possível salvar um lead duplicado.`);
+      document.getElementById('f-cnpj').focus();
+      return;
+    }
+  }
+  // FIX: Aviso de duplicata por nome da empresa (soft warn — permite continuar com confirmação)
+  if (empresa.length >= 3) {
+    const empresaNorm = empresa.toLowerCase();
+    const fonteNome = [
+      ...leads.filter(l => numId === null || Number(l.id) !== numId).map(l => ({ tipo:'Lead', nome:(l.empresa||''), resp:l.responsavel })),
+      ...clientes.map(c => ({ tipo:'Cliente', nome:(c.nome||''), resp:c.responsavel })),
+    ];
+    const dupNome = fonteNome.find(f => f.nome && f.nome.toLowerCase() === empresaNorm);
+    if (dupNome) {
+      if (!confirm(`⚠ Empresa já cadastrada!\n\n"${dupNome.nome}" já existe como ${dupNome.tipo}${dupNome.resp?' (Resp: '+dupNome.resp+')':''}.\n\nDeseja salvar mesmo assim?`)) return;
+    }
+  }
+  const servicosSel = Array.from(document.querySelectorAll('#ms-dropdown input[type=checkbox]:checked')).map(cb=>cb.value).filter(Boolean);
+  // numId já declarado acima na validação de duplicata
   const prevLead = numId ? leads.find(l=>Number(l.id)===numId) : null;
   const prevStage = prevLead?.stage || null;
   const obj={
@@ -2382,14 +2436,35 @@ function processBaseRows(rows, map) {
 
   if (newItems.length === 0) { toast('Nenhuma empresa encontrada no arquivo.'); return; }
 
+  // FIX: Remove duplicatas dentro do arquivo importado e contra a base existente
+  const deduped = [];
+  const seenCnpj = new Set(baseProspeccao.map(b => (b.cnpj||'').replace(/\D/g,'').trim()).filter(Boolean));
+  const seenNome = new Set(baseProspeccao.map(b => (b.empresa||'').trim().toLowerCase()).filter(Boolean));
+  let dupCount = 0;
+  for (const item of newItems) {
+    const cnpjNum = (item.cnpj||'').replace(/\D/g,'').trim();
+    const nomeNorm = (item.empresa||'').trim().toLowerCase();
+    if (cnpjNum && seenCnpj.has(cnpjNum)) { dupCount++; continue; }
+    if (seenNome.has(nomeNorm)) { dupCount++; continue; }
+    if (cnpjNum) seenCnpj.add(cnpjNum);
+    seenNome.add(nomeNorm);
+    deduped.push(item);
+  }
+
+  if (deduped.length === 0) { toast(`Nenhuma empresa nova (${dupCount} duplicata(s) ignorada(s))`); return; }
+
+  const msg = dupCount > 0
+    ? `Importar ${deduped.length} empresa(s) nova(s)?\n(${dupCount} duplicata(s) ignorada(s))\n\nSerão adicionadas às ${baseProspeccao.length} já existentes.`
+    : `Importar ${deduped.length} empresa(s) para a base?\n\nSerão adicionadas às ${baseProspeccao.length} já existentes.`;
+
   // Preview antes de confirmar
-  const ok = confirm(`Importar ${newItems.length} empresa(s) para a base?\n\nElas serão adicionadas às ${baseProspeccao.length} já existentes.`);
+  const ok = confirm(msg);
   if (!ok) return;
 
-  baseProspeccao = [...baseProspeccao, ...newItems];
+  baseProspeccao = [...baseProspeccao, ...deduped];
   saveBase();
   renderBaseTable();
-  toast(`${newItems.length} empresa(s) importada(s) ✓`);
+  toast(`${deduped.length} empresa(s) importada(s)${dupCount > 0 ? ` · ${dupCount} duplicata(s) ignorada(s)` : ''} ✓`);
 }
 
 function exportBaseTemplate() {
