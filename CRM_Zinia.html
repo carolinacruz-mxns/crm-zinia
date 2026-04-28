@@ -674,6 +674,8 @@ let dataReady = false;       // true apenas após carregar dados do Sheets com s
 let leadsLoadedCount = 0;    // quantos leads vieram do Sheets no último carregamento
 let baseProspeccao = [];     // banco de empresas pré-cadastradas
 let deletedLeadIds = new Set(JSON.parse(localStorage.getItem('crm_deleted_ids')||'[]')); // IDs de leads excluídos
+// CORREÇÃO: ID do lead sendo editado no modal (evita parsear onclick e NaN)
+let currentEditId = null;
 
 // ═══════════════════════════════════════════
 // LOGIN
@@ -787,17 +789,7 @@ async function initCloud() {
       sheetsGet('getClientes'), sheetsGet('getHistorico'),
       sheetsGet('getPedidos'), sheetsGet('getBase')
     ]);
-    const serverLeads = ld.leads || [];
-    // Recupera historico_acoes do localStorage (campo local que pode não estar no servidor ainda)
-    const localLeads = loadLocal('crm_zinia_v2') || [];
-    const localMap = new Map(localLeads.map(l => [l.id, l]));
-    leads = serverLeads.map(sl => {
-      const local = localMap.get(sl.id);
-      return {
-        ...sl,
-        historico_acoes: (local?.historico_acoes?.length ? local.historico_acoes : sl.historico_acoes) || []
-      };
-    });
+    leads = ld.leads || [];
     nextId = ld.nextId || (leads.reduce((m,l) => Math.max(m,l.id),0)+1);
     config = {...defaultConfig(),...cd, metas:cd.metas||{}};
     clientes = cl.clientes || [];
@@ -808,92 +800,34 @@ async function initCloud() {
     baseProspeccao = bd.base || [];
     dataReady = true;
     leadsLoadedCount = leads.length;
-    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
-    const pendingQ = _loadOfflineQueue();
-    if (pendingQ.length > 0) {
-      showSyncStatus(`🔄 Sincronizando ${pendingQ.length} alteração(ões) offline...`, 'var(--amber)');
-      await _flushOfflineQueue();
-    }
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     renderAll();
-    // FIX: Evita acumular múltiplos intervalos se o usuário fizer logout/login
+    // Evita acumular múltiplos intervalos se o usuário fizer logout/login
     if (!window._autoRefreshInterval) {
-      window._autoRefreshInterval = setInterval(autoRefresh, 30000);
-    }
-    // Quando voltar online após ficar offline, sincroniza imediatamente
-    if (!window._onlineListenerSet) {
-      window._onlineListenerSet = true;
-      window.addEventListener('online', async () => {
-        showSyncStatus('🔄 Reconectado, sincronizando...', 'var(--amber)');
-        await _flushOfflineQueue();
-        await autoRefresh();
-      });
+      window._autoRefreshInterval = setInterval(autoRefresh, 60000);
     }
   } catch(e) {
-    showSyncStatus('⚠ Offline — dados locais', 'var(--amber)');
-    leads = loadLocal('crm_zinia_v2') || [];
-    config = loadLocalConfig();
-    clientes = loadLocal('crm_clientes') || [];
-    historico = loadLocal('crm_historico') || [];
-    pedidos = loadLocal('crm_pedidos') || [];
-    // FIX: dataReady=true mesmo offline; os dados locais são a fonte verdade
-    dataReady = true;
-    leadsLoadedCount = leads.length;
-    renderAll();
+    showSyncStatus('⚠ Sem conexão com Sheets', 'var(--red)');
+    dataReady = false;
+    alert('Não foi possível conectar ao servidor. Verifique sua conexão e recarregue a página.');
   }
 }
 
 async function autoRefresh() {
-  // FIX: Não atualiza enquanto um save está em andamento (evita sobrescrever dados locais)
+  // Não atualiza enquanto um save está em andamento
   if (isSyncing) return;
-  // FIX: Se houve um save local nos últimos 10s, aguarda — o servidor pode ainda não ter o dado
-  const lastLocalSave = Number(localStorage.getItem('crm_last_local_save') || 0);
-  if (Date.now() - lastLocalSave < 10000) return;
-  await _flushOfflineQueue();
   try {
     const [ld, cl, hi, pd] = await Promise.all([
       sheetsGet('getLeads'), sheetsGet('getClientes'),
       sheetsGet('getHistorico'), sheetsGet('getPedidos')
     ]);
-    const serverLeads = ld.leads || [];
-    // FIX race condition: usa localStorage como fonte de verdade local
-    // O array em memória (leads) pode ainda estar desatualizado se o save acabou de rodar
-    const localFromStorage = loadLocal('crm_zinia_v2') || [];
-    // Combina: prefere dados em memória se mais recentes, mas garante que leads do
-    // localStorage que ainda não estão em memória (recém adicionados) sejam preservados
-    const localMergedMap = new Map(leads.map(l => [l.id, l]));
-    localFromStorage.forEach(ls => {
-      const inMem = localMergedMap.get(ls.id);
-      if (!inMem || (ls.updated_at || 0) > (inMem.updated_at || 0)) {
-        localMergedMap.set(ls.id, ls);
-      }
-    });
-    // Merge por timestamp: ganha o registro mais recente campo a campo
-    const localMap = localMergedMap;
-    const serverMap = new Map(serverLeads.map(l => [l.id, l]));
-    const allIds = new Set([...localMap.keys(), ...serverMap.keys()]);
-    const merged = [];
-    allIds.forEach(id => {
-      // Nunca reinsere leads que foram explicitamente deletados
-      if (deletedLeadIds.has(Number(id))) return;
-      const local = localMap.get(id);
-      const server = serverMap.get(id);
-      if (!local) { merged.push({...server, historico_acoes: server.historico_acoes||[]}); return; }
-      if (!server) { merged.push(local); return; }
-      const localTs = local.updated_at || 0;
-      const serverTs = server.updated_at || 0;
-      const base = localTs >= serverTs ? {...local} : {...server};
-      base.historico_acoes = _mergeHistorico(local.historico_acoes||[], server.historico_acoes||[]);
-      merged.push(base);
-    });
-    leads = merged;
+    leads = ld.leads || [];
     nextId = Math.max(ld.nextId||0, leads.reduce((m,l)=>Math.max(m,l.id),0)+1);
     clientes = cl.clientes || [];
     historico = hi.historico || [];
     pedidos = pd.pedidos || [];
     nextPedidoId = pd.nextId || (pedidos.reduce((m,p)=>Math.max(m,p.id),0)+1);
     leadsLoadedCount = leads.length;
-    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
     showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
     await autoMigrateLeadsFechados();
     renderAll();
@@ -912,108 +846,27 @@ function _mergeHistorico(a, b) {
   return all.sort((x,y) => parse(y.dt) - parse(x.dt));
 }
 
-// ─── FILA OFFLINE ────────────────────────────────────────────────────────────
-const OFFLINE_QUEUE_KEY = 'crm_offline_queue';
-function _loadOfflineQueue() { try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY))||[]; } catch { return []; } }
-function _saveOfflineQueue(q) { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q)); }
-function _enqueueOffline(leadId) {
-  const q = _loadOfflineQueue().filter(x => x.id !== leadId);
-  const lead = leads.find(l => l.id === leadId);
-  if (lead) q.push({ id: leadId, ts: Date.now(), snapshot: JSON.parse(JSON.stringify(lead)) });
-  _saveOfflineQueue(q);
-}
-async function _flushOfflineQueue() {
-  const q = _loadOfflineQueue();
-  if (!q.length) return;
-  const remaining = [];
-  let flushed = 0;
-  for (const item of q) {
-    try {
-      const serverData = await sheetsGet('getLeads');
-      const serverLeads = serverData?.leads || [];
-      const serverLead = serverLeads.find(l => l.id === item.id);
-      const serverTs = serverLead?.updated_at || 0;
-      if (item.snapshot.updated_at >= serverTs) {
-        const updatedLeads = serverLeads.map(l => l.id === item.id ? {
-          ...l,
-          ...item.snapshot,
-          historico_acoes: _mergeHistorico(item.snapshot.historico_acoes||[], l.historico_acoes||[])
-        } : l);
-        if (!serverLead) updatedLeads.push(item.snapshot);
-        await sheetsPost('saveLeads', { leads: updatedLeads, nextId });
-      }
-      flushed++;
-    } catch(e) { remaining.push(item); }
-  }
-  _saveOfflineQueue(remaining);
-  if (flushed > 0) toast(`🔄 ${flushed} alteração(ões) offline sincronizada(s) ✓`);
-}
+// ─── FILA OFFLINE (removida — Sheets é a única fonte de verdade) ────────────
+// As funções abaixo são stubs mantidos para compatibilidade com chamadas antigas
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function saveLeads() {
   if (!dataReady) { console.warn('saveLeads bloqueado: dados não carregaram ainda.'); return; }
-  if (leadsLoadedCount > 3 && leads.length < leadsLoadedCount * 0.7) {
-    const diff = leadsLoadedCount - leads.length;
-    if (!confirm(`⚠️ Você está prestes a salvar ${leads.length} leads, mas havia ${leadsLoadedCount}.\nIsso removeria ${diff} lead(s). Confirma?`)) {
-      showSyncStatus('✗ Cancelado pelo usuário', 'var(--red)'); return;
-    }
-  }
-  // Sempre persiste localmente primeiro — dado nunca se perde
-  localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
-  // FIX: registra timestamp do último save local para que autoRefresh não sobrescreva dados recentes
-  localStorage.setItem('crm_last_local_save', String(Date.now()));
-
   if (isSyncing) {
-    // Save em andamento — enfileira alterações recentes para envio posterior
-    leads.filter(l => l.updated_at && Date.now()-l.updated_at < 10000).forEach(l => _enqueueOffline(l.id));
+    console.warn('saveLeads: save já em andamento, ignorando chamada duplicada.');
     return;
   }
   isSyncing = true;
   showSyncStatus('🔄 Salvando...', 'var(--amber)');
-  // FIX: captura snapshot dos leads no momento do save para evitar race condition
-  // se outro evento modificar o array durante o await abaixo
   const leadsSnapshot = JSON.parse(JSON.stringify(leads));
   const nextIdSnapshot = nextId;
   try {
-    // Merge antes de salvar: preserva leads de outros usuários e histórico do servidor
-    let serverLeads = null;
-    try { serverLeads = (await sheetsGet('getLeads'))?.leads || null; } catch { serverLeads = null; }
-    if (serverLeads) {
-      const serverMap = new Map(serverLeads.map(l => [l.id, l]));
-      // FIX: usa leadsSnapshot para o merge, não o array global que pode ter mudado
-      const extra = serverLeads.filter(sl => !leadsSnapshot.find(l => l.id === sl.id) && !deletedLeadIds.has(Number(sl.id)));
-      if (extra.length) {
-        // Adiciona os extras tanto no snapshot quanto no array global
-        for (const e of extra) { leadsSnapshot.push(e); if (!leads.find(l => l.id === e.id)) leads.push(e); }
-        leadsLoadedCount = leads.length;
-        localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
-        renderAll();
-        toast(`⚠ ${extra.length} lead(s) de outro usuário adicionados`);
-      }
-      // Mescla historico_acoes do servidor em cada lead do snapshot
-      const mergedSnapshot = leadsSnapshot.map(local => {
-        const server = serverMap.get(local.id);
-        if (!server) return local;
-        return { ...local, historico_acoes: _mergeHistorico(local.historico_acoes||[], server.historico_acoes||[]) };
-      });
-      await sheetsPost('saveLeads', {leads: mergedSnapshot, nextId: nextIdSnapshot});
-      // Sincroniza o historico_acoes mesclado de volta ao array global
-      mergedSnapshot.forEach(ms => {
-        const gi = leads.findIndex(l => l.id === ms.id);
-        if (gi >= 0) leads[gi].historico_acoes = ms.historico_acoes;
-      });
-    } else {
-      await sheetsPost('saveLeads', {leads: leadsSnapshot, nextId: nextIdSnapshot});
-    }
+    await sheetsPost('saveLeads', {leads: leadsSnapshot, nextId: nextIdSnapshot});
     leadsLoadedCount = leads.length;
-    localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
-    _saveOfflineQueue([]); // limpa fila — estado completo foi salvo
     showSyncStatus('✓ Salvo ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
   } catch(e) {
-    // Offline — enfileira os leads modificados recentemente
-    leads.filter(l => l.updated_at && Date.now()-l.updated_at < 120000).forEach(l => _enqueueOffline(l.id));
-    const qLen = _loadOfflineQueue().length;
-    showSyncStatus(`⚠ Offline · ${qLen} na fila`, 'var(--amber)');
+    showSyncStatus('✗ Erro ao salvar — tente novamente', 'var(--red)');
+    toast('❌ Erro ao salvar. Verifique sua conexão.');
   }
   isSyncing = false;
 }
@@ -1376,7 +1229,9 @@ async function autoMigrateLeadsFechados() {
 // FILTERS
 // ═══════════════════════════════════════════
 function setupFilters() {
-  const respVals = [...new Set(leads.map(l=>l.responsavel).filter(Boolean))].sort();
+  // CORREÇÃO: usa config.responsaveis como lista canônica, não os dados dos leads
+  // Isso evita que variações de nome (espaço, maiúscula) apareçam duplicadas
+  const respVals = (config.responsaveis || []).slice().sort();
   const segVals = [...new Set(leads.map(l=>l.segmento).filter(Boolean))].sort();
   const tempVals = [...new Set(leads.map(l=>l.temperatura).filter(Boolean))].sort();
   const servVals = [...new Set(leads.map(l=>l.servico).filter(Boolean))].sort();
@@ -1859,8 +1714,9 @@ function saveMetasCfg() {
 // ═══════════════════════════════════════════
 function openModal(id) {
   if(!canEdit()&&!id)return;
-  const numId = id ? Number(id) : null;
-  const lead = numId ? leads.find(l => Number(l.id) === numId) : null;
+  // CORREÇÃO: armazena o ID em variável global em vez de passar pelo onclick
+  currentEditId = id ? Number(id) : null;
+  const lead = currentEditId ? leads.find(l => Number(l.id) === currentEditId) : null;
   const isNew=!lead;
   if(!canEdit()&&isNew)return;
   const d=lead||{data_lead:today(),id_lead:'',empresa:'',cidade:'',estado:'SC',cnpj:'',segmento:'',origem:'',contato_nome:'',contato_cargo:'',whatsapp:'',email:'',responsavel:currentUser?.nome||'',stage:'prospeccao',temperatura:'',servico:'',valor:'',data_ultimo_contato:today(),proxima_acao:'',data_followup:'',previsao_fechamento:'',motivo_perda:'',obs:''};
@@ -1889,8 +1745,8 @@ function openModal(id) {
         <div style="font-size:13px;color:var(--text);font-weight:500">${esc(h.acao)}</div>
         ${h.obs?`<div style="font-size:12px;color:var(--text2);margin-top:2px">${esc(h.obs)}</div>`:''}
         ${canEdit()?`<div class="acao-btns">
-          <button class="acao-btn" onclick="editAcaoModal(${d.id},${hi})">✏ Editar</button>
-          <button class="acao-btn del" onclick="deleteAcao(${d.id},${hi})">✕ Excluir</button>
+          <button class="acao-btn" onclick="editAcaoModal(${hi})">✏ Editar</button>
+          <button class="acao-btn del" onclick="deleteAcao(${hi})">✕ Excluir</button>
         </div>`:''}
       </div>`).join('')
     : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhuma ação registrada ainda.</div>';
@@ -1958,14 +1814,14 @@ function openModal(id) {
 
       ${!isNew?`<div class="modal-section" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Histórico de ações</span>
-        ${canEdit()?`<button onclick="openAddAcaoModal(${d.id})" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;">+ Registrar ação</button>`:''}
+        ${canEdit()?`<button onclick="openAddAcaoModal()" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;">+ Registrar ação</button>`:''}
       </div>
       <div style="padding:0 0 12px;max-height:260px;overflow-y:auto;">${histHTML}</div>`:''}
 
       <div class="modal-footer">
-        ${!isNew&&canEdit()?`<button class="btn-del" onclick="deleteLead(${d.id})">Excluir</button>`:''}
+        ${!isNew&&canEdit()?`<button class="btn-del" onclick="deleteLead()">Excluir</button>`:''}
         <button class="btn-cancel" onclick="closeModal()">${readonly?'Fechar':'Cancelar'}</button>
-        ${canEdit()?`<button class="btn-save" onclick="saveLead(${isNew?'null':d.id})">${isNew?'Adicionar lead':'Salvar alterações'}</button>`:''}
+        ${canEdit()?`<button class="btn-save" onclick="saveLead()">${isNew?'Adicionar lead':'Salvar alterações'}</button>`:''}
       </div>
     </div>
   </div>`;
@@ -1976,16 +1832,14 @@ function openModal(id) {
 }
 
 function closeOnBg(e){if(e.target.id==='overlay')closeModal();}
-function closeModal(){document.getElementById('modal-root').innerHTML='';}
+function closeModal(){document.getElementById('modal-root').innerHTML=''; currentEditId = null;}
 
 // ═══════════════════════════════════════════
 // AUTO-SAVE RASCUNHO DO MODAL
 // ═══════════════════════════════════════════
 function _getModalDraftKey() {
-  const btn = document.querySelector('.btn-save[onclick]');
-  if (!btn) return null;
-  const m = btn.getAttribute('onclick').match(/saveLead\(([^)]+)\)/);
-  return m ? 'crm_draft_' + m[1] : null;
+  // CORREÇÃO: usa currentEditId em vez de parsear atributo onclick
+  return 'crm_draft_' + (currentEditId !== null ? currentEditId : 'null');
 }
 function _collectModalFields() {
   const ids = ['f-data_lead','f-id_lead','f-segmento','f-empresa','f-origem','f-cidade','f-estado','f-cnpj',
@@ -2085,8 +1939,9 @@ function _msRenderTags() {
 // ═══════════════════════════════════════════
 // EDITAR / EXCLUIR AÇÃO DO LEAD
 // ═══════════════════════════════════════════
-function editAcaoModal(leadId, acaoIdx) {
-  const numId = Number(leadId);
+function editAcaoModal(acaoIdx) {
+  const numId = currentEditId;
+  if (!numId) return;
   const lead = leads.find(l=>Number(l.id)===numId);
   if (!lead || !lead.historico_acoes || !lead.historico_acoes[acaoIdx]) return;
   const h = lead.historico_acoes[acaoIdx];
@@ -2104,14 +1959,15 @@ function editAcaoModal(leadId, acaoIdx) {
       <textarea id="acao2-obs" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font);resize:vertical;min-height:60px;">${esc(h.obs||'')}</textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="document.getElementById('overlay2').remove()" style="padding:7px 16px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:var(--font);">Cancelar</button>
-      <button onclick="saveEditAcao(${numId},${acaoIdx})" style="padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">Salvar</button>
+      <button onclick="saveEditAcao(${acaoIdx})" style="padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">Salvar</button>
     </div>
   </div>`;
   document.body.appendChild(overlay2);
 }
 
-function saveEditAcao(leadId, acaoIdx) {
-  const numId = Number(leadId);
+function saveEditAcao(acaoIdx) {
+  const numId = currentEditId;
+  if (!numId) return;
   const idx = leads.findIndex(l=>Number(l.id)===numId);
   if (idx < 0 || !leads[idx].historico_acoes || !leads[idx].historico_acoes[acaoIdx]) return;
   leads[idx].historico_acoes[acaoIdx] = {
@@ -2127,9 +1983,10 @@ function saveEditAcao(leadId, acaoIdx) {
   openModal(numId);
 }
 
-function deleteAcao(leadId, acaoIdx) {
+function deleteAcao(acaoIdx) {
   if (!confirm('Excluir este registro de ação?')) return;
-  const numId = Number(leadId);
+  const numId = currentEditId;
+  if (!numId) return;
   const idx = leads.findIndex(l=>Number(l.id)===numId);
   if (idx < 0 || !leads[idx].historico_acoes) return;
   leads[idx].historico_acoes.splice(acaoIdx, 1);
@@ -2141,8 +1998,9 @@ function deleteAcao(leadId, acaoIdx) {
 
 
 // Register action in lead history
-function openAddAcaoModal(leadId) {
-  const numId = Number(leadId);
+function openAddAcaoModal() {
+  const numId = currentEditId;
+  if(!numId)return;
   const lead = leads.find(l=>Number(l.id)===numId);
   if(!lead)return;
   const acaoOpts2 = ACAO_OPTS.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
@@ -2160,14 +2018,15 @@ function openAddAcaoModal(leadId) {
       <textarea id="acao2-obs" placeholder="Detalhes do contato..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font);resize:vertical;min-height:60px;"></textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="document.getElementById('overlay2').remove()" style="padding:7px 16px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:var(--font);">Cancelar</button>
-      <button onclick="saveAcaoLead(${numId})" style="padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">Salvar ação</button>
+      <button onclick="saveAcaoLead()" style="padding:7px 16px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">Salvar ação</button>
     </div>
   </div>`;
   document.body.appendChild(overlay2);
 }
 
-function saveAcaoLead(leadId) {
-  const numId = Number(leadId);
+function saveAcaoLead() {
+  const numId = currentEditId;
+  if(!numId)return;
   const idx = leads.findIndex(l=>Number(l.id)===numId);
   if(idx<0)return;
   const tipo = document.getElementById('acao2-tipo')?.value || '';
@@ -2196,7 +2055,9 @@ function _initModalCnpj() {
   if (el && el.value) { maskCnpjCpf(el); checkDuplicate(); }
 }
 
-function saveLead(id) {
+function saveLead() {
+  // CORREÇÃO: usa currentEditId (variável global) em vez de parsear parâmetro do onclick
+  const id = currentEditId; // null = novo lead, número = edição
   const empresa=document.getElementById('f-empresa').value.trim();
   const contato=document.getElementById('f-contato_nome').value.trim();
   if(!empresa&&!contato){alert('Informe o nome da empresa ou do contato.');return;}
@@ -2219,8 +2080,9 @@ function saveLead(id) {
     }
   }
 
-  // FIX: Bloqueio de duplicata por CNPJ (hard block) — não deixa salvar
-  const numId = id && id !== 'null' ? Number(id) : null;
+  // Bloqueio de duplicata por CNPJ (hard block) — não deixa salvar
+  // CORREÇÃO: usa currentEditId diretamente (já é number ou null, sem risco de NaN)
+  const numId = id; // 'id' já é currentEditId (number ou null)
   if (cnpjRaw.length >= 11) {
     const fontesCnpj = [
       ...leads.filter(l => numId === null || Number(l.id) !== numId).map(l => ({ tipo:'Lead', nome:(l.empresa||l.contato_nome||''), cnpj:(l.cnpj||'').replace(/\D/g,''), resp:l.responsavel })),
@@ -2246,7 +2108,6 @@ function saveLead(id) {
     }
   }
   const servicosSel = Array.from(document.querySelectorAll('#ms-dropdown input[type=checkbox]:checked')).map(cb=>cb.value).filter(Boolean);
-  // numId já declarado acima na validação de duplicata
   const prevLead = numId ? leads.find(l=>Number(l.id)===numId) : null;
   const prevStage = prevLead?.stage || null;
   const obj={
@@ -2319,8 +2180,10 @@ function saveLead(id) {
   saveLeads(); closeModal(); renderAll();
 }
 
-function deleteLead(id) {
-  const numId = Number(id);
+function deleteLead() {
+  // CORREÇÃO: usa currentEditId (variável global)
+  const numId = currentEditId;
+  if (!numId) return;
   const l = leads.find(x=>Number(x.id)===numId);
   if (!l) return;
 
@@ -2334,10 +2197,7 @@ function deleteLead(id) {
 
   if (!confirm(msg)) return;
   leads = leads.filter(x=>Number(x.id)!==numId);
-  // Registra o ID como deletado para evitar que o merge do servidor o reinsira
-  deletedLeadIds.add(numId);
-  localStorage.setItem('crm_deleted_ids', JSON.stringify([...deletedLeadIds]));
-  addHist('hist-delete','Lead: '+(l?.empresa||l?.contato_nome||id),'Removido');
+  addHist('hist-delete','Lead: '+(l?.empresa||l?.contato_nome||String(numId)),'Removido');
 
   // Restaurar empresa na base de prospecção se o lead veio de lá
   const empresaLead = (l.empresa||'').trim().toLowerCase();
