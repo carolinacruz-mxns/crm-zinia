@@ -846,6 +846,9 @@ async function initCloud() {
 async function autoRefresh() {
   // FIX: Não atualiza enquanto um save está em andamento (evita sobrescrever dados locais)
   if (isSyncing) return;
+  // FIX: Se houve um save local nos últimos 10s, aguarda — o servidor pode ainda não ter o dado
+  const lastLocalSave = Number(localStorage.getItem('crm_last_local_save') || 0);
+  if (Date.now() - lastLocalSave < 10000) return;
   await _flushOfflineQueue();
   try {
     const [ld, cl, hi, pd] = await Promise.all([
@@ -853,8 +856,20 @@ async function autoRefresh() {
       sheetsGet('getHistorico'), sheetsGet('getPedidos')
     ]);
     const serverLeads = ld.leads || [];
+    // FIX race condition: usa localStorage como fonte de verdade local
+    // O array em memória (leads) pode ainda estar desatualizado se o save acabou de rodar
+    const localFromStorage = loadLocal('crm_zinia_v2') || [];
+    // Combina: prefere dados em memória se mais recentes, mas garante que leads do
+    // localStorage que ainda não estão em memória (recém adicionados) sejam preservados
+    const localMergedMap = new Map(leads.map(l => [l.id, l]));
+    localFromStorage.forEach(ls => {
+      const inMem = localMergedMap.get(ls.id);
+      if (!inMem || (ls.updated_at || 0) > (inMem.updated_at || 0)) {
+        localMergedMap.set(ls.id, ls);
+      }
+    });
     // Merge por timestamp: ganha o registro mais recente campo a campo
-    const localMap = new Map(leads.map(l => [l.id, l]));
+    const localMap = localMergedMap;
     const serverMap = new Map(serverLeads.map(l => [l.id, l]));
     const allIds = new Set([...localMap.keys(), ...serverMap.keys()]);
     const merged = [];
@@ -945,6 +960,8 @@ async function saveLeads() {
   }
   // Sempre persiste localmente primeiro — dado nunca se perde
   localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
+  // FIX: registra timestamp do último save local para que autoRefresh não sobrescreva dados recentes
+  localStorage.setItem('crm_last_local_save', String(Date.now()));
 
   if (isSyncing) {
     // Save em andamento — enfileira alterações recentes para envio posterior
