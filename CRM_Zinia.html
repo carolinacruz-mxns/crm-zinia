@@ -865,6 +865,7 @@ async function autoRefresh() {
     leadsLoadedCount = leads.length;
     localStorage.setItem('crm_zinia_v2', JSON.stringify(leads));
     showSyncStatus('✓ ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), 'var(--green)');
+    await autoMigrateLeadsFechados();
     renderAll();
   } catch(e) {
     showSyncStatus('⚠ Sem conexão', 'var(--amber)');
@@ -1197,7 +1198,6 @@ function renderAll() {
   setupFilters();
   showFollowupAlert();
   showClienteAlert();
-  autoMigrateLeadsFechados();
   if(currentView==='kanban')renderKanban();
   else if(currentView==='lista')renderLista();
   else if(currentView==='base')renderBaseView();
@@ -1260,20 +1260,34 @@ function showClienteAlert() {
 async function autoMigrateLeadsFechados() {
   const tod = today();
   const now = Date.now();
-  const toMigrate = leads.filter(l => {
-    if (l.stage !== 'fechado') return false;
-    // Usa data_fechado_ts (timestamp) se disponível, senão usa data de referência
+  const toMigrate = [];
+  let stamped = false;
+
+  for (const l of leads) {
+    if (l.stage !== 'fechado') continue;
+
     if (l.data_fechado_ts) {
-      return (now - l.data_fechado_ts) >= 24 * 3600 * 1000;
+      // Só migra se realmente passaram 24h desde o fechamento
+      if ((now - l.data_fechado_ts) >= 24 * 3600 * 1000) {
+        toMigrate.push(l);
+      }
+    } else {
+      // Sem timestamp: grava agora e aguarda próximas 24h (não migra ainda)
+      l.data_fechado_ts = now;
+      stamped = true;
     }
-    const fechamento = l.data_ultimo_contato || l.data_lead || '';
-    if (!fechamento) return false;
-    return daysDiff(fechamento) >= 1;
-  });
+  }
+
+  // Se só gravou timestamps, salva os leads sem migrar
+  if (stamped && !toMigrate.length) {
+    saveLeads();
+    return;
+  }
+
   if (!toMigrate.length) return;
+
   let changed = false;
   for (const l of toMigrate) {
-    // Verifica se já existe como cliente pelo nome
     const jaExiste = clientes.some(c => c.nome && l.empresa && c.nome.toLowerCase() === l.empresa.toLowerCase());
     if (!jaExiste) {
       const novoCliente = {
@@ -1303,12 +1317,12 @@ async function autoMigrateLeadsFechados() {
       addHist('cliente', 'Cliente: ' + novoCliente.nome, 'Migrado automaticamente do Kanban (após 24h)');
       changed = true;
     }
-    // Remove lead do Kanban
     leads = leads.filter(x => x.id !== l.id);
     changed = true;
   }
   if (changed) {
     await Promise.all([saveLeads(), saveClientes()]);
+    renderAll();
     toast(`${toMigrate.length} lead(s) fechado(s) migrado(s) para Clientes ✓`);
   }
 }
@@ -1653,8 +1667,12 @@ function renderDashboard() {
   const fechados = dashLeads.filter(l=>l.stage==='fechado');
   const perdidos = dashLeads.filter(l=>l.stage==='perdido');
   const valorFechado = fechados.reduce((s,l)=>s+Number(l.valor||0),0);
-  const fechadosMes = dashLeads.filter(l=>l.stage==='fechado'&&((l.data_ultimo_contato||'').startsWith(mesStr)||(l.data_lead||'').startsWith(mesStr)));
-  const valorFechadoMes = fechadosMes.reduce((s,l)=>s+Number(l.valor||0),0);
+  // Fechados do mês: leads ainda no kanban + clientes migrados este mês
+  const fechadosMesLeads = dashLeads.filter(l=>l.stage==='fechado'&&((l.data_ultimo_contato||'').startsWith(mesStr)||(l.data_lead||'').startsWith(mesStr)));
+  const clientesMes = dashClientes.filter(c=>(c.data_fechamento||'').startsWith(mesStr)||(c.inicio||'').startsWith(mesStr));
+  const fechadosMes = [...fechadosMesLeads, ...clientesMes];
+  const valorFechadoMes = fechadosMesLeads.reduce((s,l)=>s+Number(l.valor||0),0)
+    + clientesMes.reduce((s,c)=>s+Number(c.valor_anual||0),0);
   const total = dashLeads.length;
   const taxaConversao = total > 0 ? Math.round(fechados.length/total*100) : 0;
   const taxaPerda = total > 0 ? Math.round(perdidos.length/total*100) : 0;
