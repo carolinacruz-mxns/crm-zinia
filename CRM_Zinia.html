@@ -809,6 +809,7 @@ async function initCloud() {
     showSyncStatus('✓ Sincronizado', 'var(--green)');
     const banner = document.getElementById('offline-banner');
     if (banner) banner.style.display = 'none';
+    await autoMigrateLeadsFechados();
     renderAll();
     if (!window._autoRefreshInterval) {
       window._autoRefreshInterval = setInterval(autoRefresh, 60000);
