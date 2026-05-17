@@ -811,6 +811,7 @@ async function initCloud() {
     if (banner) banner.style.display = 'none';
     await autoMigrateLeadsFechados();
     renderAll();
+    showResumo();
     if (!window._autoRefreshInterval) {
       window._autoRefreshInterval = setInterval(autoRefresh, 60000);
     }
@@ -1034,6 +1035,81 @@ function tempColor(t){if(!t)return{bg:'var(--gray-bg)',color:'var(--gray)'};cons
 function tempShort(t){if(!t)return '';const tl=t.toLowerCase();if(tl.includes('quente'))return '🔥 Quente';if(tl.includes('morno'))return '🌤 Morno';if(tl.includes('frio'))return '❄️ Frio';return t.split('(')[0].trim();}
 function canEdit(){return currentUser && currentUser.nivel !== 'visualizador';}
 
+// ── ÍNDICE DE QUALIDADE ───────────────────────────────
+function leadQuality(l) {
+  const avancado = ['proposta','negociacao','fechado'].includes(l.stage);
+  let score = 0;
+  if (avancado) {
+    if (l.origem)                    score += 20;
+    if (l.segmento)                  score += 20;
+    if (l.data_followup)             score += 20;
+    if (l.valor)                     score += 15;
+    if (l.valor_orcado)              score += 15;
+    if (l.whatsapp || l.email)       score += 5;
+    if (l.servico)                   score += 5;
+  } else {
+    if (l.origem)                    score += 25;
+    if (l.segmento)                  score += 25;
+    if (l.data_followup)             score += 25;
+    if (l.valor)                     score += 15;
+    if (l.whatsapp || l.email)       score += 5;
+    if (l.servico)                   score += 5;
+  }
+  return score;
+}
+function qualityMeta(score) {
+  if (score >= 80) return {color:'#15803D', bg:'#F0FDF4', label:'Bom'};
+  if (score >= 50) return {color:'#B45309', bg:'#FFFBEB', label:'Regular'};
+  return {color:'#B91C1C', bg:'#FEF2F2', label:'Incompleto'};
+}
+
+// ── RESUMÃO DIÁRIO ────────────────────────────────────
+function showResumo() {
+  const tod = today();
+  const isVendedor = currentUser?.nivel === 'vendedor';
+  const meus = leads.filter(l => l.stage !== 'perdido' && (!isVendedor || l.responsavel === currentUser.nome));
+
+  const hoje       = meus.filter(l => l.data_followup === tod);
+  const atrasados  = meus.filter(l => l.data_followup && l.data_followup < tod);
+  const semData    = meus.filter(l => !l.data_followup && l.stage !== 'fechado');
+  const incompletos = meus.filter(l => l.stage !== 'fechado' && leadQuality(l) < 50);
+
+  const total = hoje.length + atrasados.length + semData.length + incompletos.length;
+  if (total === 0) return; // Tudo em dia, não mostra
+
+  const nome = currentUser.nome.split(' ')[0];
+
+  const section = (icon, label, color, items) => items.length === 0 ? '' : `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:${color};margin-bottom:6px">${icon} ${label} — ${items.length}</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${items.slice(0,5).map(l=>`<div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px;cursor:pointer" onclick="closeResumo();openModal(${l.id})">${esc(l.empresa||l.contato_nome)} <span style="color:var(--text3);font-size:11px">· ${esc(l.responsavel||'')}</span></div>`).join('')}
+        ${items.length>5?`<div style="font-size:11px;color:var(--text3);padding:2px 8px">+${items.length-5} mais</div>`:''}
+      </div>
+    </div>`;
+
+  document.getElementById('modal-root').insertAdjacentHTML('beforeend', `
+  <div id="resumao-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px 28px 20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-size:16px;font-weight:700">Bom dia, ${esc(nome)}! 👋</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Seu resumo de hoje</div>
+        </div>
+        <button onclick="closeResumo()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);padding:4px">×</button>
+      </div>
+      ${section('📅','Follow-ups de hoje','var(--blue)',hoje)}
+      ${section('⚠️','Follow-ups atrasados','var(--red)',atrasados)}
+      ${section('❓','Sem data de follow-up','var(--amber)',semData)}
+      ${section('📋','Cadastro incompleto (abaixo de 50%)','var(--text2)',incompletos)}
+      <button onclick="closeResumo()" style="width:100%;margin-top:8px;padding:10px;border-radius:var(--r-sm);background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600">Entendido, vamos lá!</button>
+    </div>
+  </div>`);
+}
+function closeResumo() {
+  document.getElementById('resumao-overlay')?.remove();
+}
+
 // ═══════════════════════════════════════════
 // MÁSCARA CNPJ / CPF
 // ═══════════════════════════════════════════
@@ -1253,7 +1329,7 @@ async function autoMigrateLeadsFechados() {
         segmento: l.segmento,
         servico: l.servicos ? l.servicos.join(', ') : (l.servico || ''),
         tipo_valor: 'variavel',
-        valor_mensal: 0,
+        valor_mensal: l.valor_orcado || 0,
         valor_anual: l.valor || 0,
         contrato: '',
         responsavel: l.responsavel,
@@ -1375,6 +1451,7 @@ function cardHTML(l, st) {
       ${contactedToday?`<span class="chip" style="background:var(--green-bg);color:var(--green)">✓ Contactado hoje</span>`:''}
       ${histCount>0?`<span class="chip" style="background:var(--teal-bg);color:var(--teal)">📋 ${histCount} ação${histCount>1?'ões':''}</span>`:''}
     </div>
+    ${(()=>{const q=leadQuality(l);const qm=qualityMeta(q);return `<div title="Qualidade de preenchimento: ${qm.label}" style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;display:flex;align-items:center;gap:6px"><div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:${q}%;height:100%;background:${qm.color};border-radius:2px"></div></div><span style="font-size:10px;font-weight:600;color:${qm.color}">${q}%</span></div>`;})()}
   </div>`;
 }
 
@@ -1417,6 +1494,7 @@ function renderLista() {
     {key:'data_followup',label:'Follow-up',fmt:l=>{const dfu=daysDiff(l.data_followup);const ov=dfu!==null&&dfu>0;return l.data_followup?`<span class="chip ${ov?'chip-overdue':'chip-followup'}">${ov?'⚠ ':''}${fmtDate(l.data_followup)}</span>`:'—';}},
     {key:'proxima_acao',label:'Próxima ação',fmt:l=>l.proxima_acao?`<span class="chip chip-serv">${esc(l.proxima_acao)}</span>`:'—'},
     {key:'responsavel',label:'Responsável',fmt:l=>esc(l.responsavel||'—')},
+    {key:'_quality',label:'Qualidade',fmt:l=>{const q=leadQuality(l);const qm=qualityMeta(q);return `<div title="${qm.label}" style="display:flex;align-items:center;gap:5px"><div style="width:44px;height:6px;background:var(--border);border-radius:3px"><div style="width:${q}%;height:100%;background:${qm.color};border-radius:3px"></div></div><span style="font-size:11px;font-weight:600;color:${qm.color}">${q}%</span></div>`;}},
   ];
   let items = [...getListFiltered()].sort((a,b)=>{
     let va=a[listSort.col]||'',vb=b[listSort.col]||'';
@@ -1847,6 +1925,7 @@ function openModal(id) {
         <div class="field"><label>Etapa do pipeline</label><select id="f-stage" ${ro}>${stageOpts}</select></div>
         <div class="field"><label>Temperatura</label><select id="f-temperatura" ${ro}>${tempOpts}</select></div>
         <div class="field"><label>Valor potencial anual (R$)</label><input type="number" id="f-valor" value="${d.valor||''}" placeholder="0" min="0" ${ro}></div>
+        <div class="field"><label>Valor do orçamento (R$)</label><input type="number" id="f-valor_orcado" value="${d.valor_orcado||''}" placeholder="Preencher ao enviar proposta" min="0" ${ro}></div>
         <div class="field"><label>Previsão de fechamento</label><input type="date" id="f-previsao_fechamento" value="${toDateInput(d.previsao_fechamento)}" ${ro}></div>
         <div class="field"><label>Motivo de perda</label><select id="f-motivo_perda" ${ro}>${motivoOpts}</select></div>
         <div class="field full"><label>Serviços de interesse</label>
@@ -2525,9 +2604,6 @@ function selecionarDaBase(id) {
   }, 80);
 }
 
-// Hook no saveLead para marcar a empresa como "em prospecção"
-const _origSaveLeadBase = window.saveLead;
-
 // ═══════════════════════════════════════════
 // BASE VIEW — Lista de prospecção do vendedor
 // ═══════════════════════════════════════════
@@ -2642,8 +2718,8 @@ function renderCarteira() {
   const comContato = lista.filter(c=>c.proximo_contato&&c.proximo_contato<=tod).length;
   document.getElementById('carteira-kpis').innerHTML = `
     <div class="c-kpi"><div class="c-kpi-label">Clientes ativos</div><div class="c-kpi-value">${lista.length}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Receita mensal</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalMensal)}</div></div>
-    <div class="c-kpi"><div class="c-kpi-label">Receita anual</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalAnual)}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Orçamento fechado</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalMensal)}</div></div>
+    <div class="c-kpi"><div class="c-kpi-label">Valor anual estimado</div><div class="c-kpi-value" style="font-size:20px">${fmt(totalAnual)}</div></div>
     <div class="c-kpi"><div class="c-kpi-label">Contato pendente</div><div class="c-kpi-value" style="color:${comContato>0?'var(--amber)':'var(--text)'}">${comContato}</div></div>`;
 
   document.getElementById('carteira-count').textContent = `${lista.length} cliente${lista.length!==1?'s':''}`;
@@ -2704,8 +2780,8 @@ function openClienteModal(id) {
         <div class="field"><label>Serviço</label><select id="fc-servico" ${ro}>${servOpts}</select></div>
         <div class="field"><label>Responsável</label><select id="fc-responsavel" ${ro}>${respOpts}</select></div>
         <div class="field"><label>Periodicidade</label><select id="fc-contrato" ${ro}>${contratoOpts}</select></div>
-        <div class="field"><label>Valor mensal (R$)</label><input type="number" id="fc-valor_mensal" value="${c.valor_mensal||''}" min="0" ${ro}></div>
-        <div class="field"><label>Valor anual (R$)</label><input type="number" id="fc-valor_anual" value="${c.valor_anual||''}" min="0" ${ro}></div>
+        <div class="field"><label>Valor orçamento fechado (R$)</label><input type="number" id="fc-valor_mensal" value="${c.valor_mensal||''}" min="0" ${ro}></div>
+        <div class="field"><label>Valor anual estimado (R$)</label><input type="number" id="fc-valor_anual" value="${c.valor_anual||''}" min="0" ${ro}></div>
         <div class="field"><label>Data de fechamento</label><input type="date" id="fc-data_fechamento" value="${toDateInput(c.data_fechamento)}" ${ro}></div>
         <div class="field"><label>Renovação em</label><input type="date" id="fc-renovacao" value="${toDateInput(c.renovacao)}" ${ro}></div>
         <div class="field"><label>Próximo contato</label><input type="date" id="fc-proximo_contato" value="${toDateInput(c.proximo_contato)}" ${ro}></div>
