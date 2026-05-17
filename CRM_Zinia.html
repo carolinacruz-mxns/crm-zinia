@@ -1210,9 +1210,8 @@ function showClienteAlert() {
   }
 }
 
-// Auto-migra leads "Fechado" com mais de 24h para Clientes
+// Auto-migra leads "Fechado" com mais de 72h para Clientes
 async function autoMigrateLeadsFechados() {
-  const tod = today();
   const now = Date.now();
   const toMigrate = [];
   let stamped = false;
@@ -1220,15 +1219,15 @@ async function autoMigrateLeadsFechados() {
   for (const l of leads) {
     if (l.stage !== 'fechado') continue;
 
-    if (l.data_fechado_ts) {
-      // Só migra se realmente passaram 24h desde o fechamento
-      if ((now - l.data_fechado_ts) >= 24 * 3600 * 1000) {
-        toMigrate.push(l);
-      }
-    } else {
-      // Sem timestamp: grava agora e aguarda próximas 24h (não migra ainda)
-      l.data_fechado_ts = now;
+    if (!l.data_fechado_ts) {
+      // Sem timestamp: usa data_ultimo_contato como referência de quando fechou
+      const ref = l.data_ultimo_contato ? new Date(l.data_ultimo_contato).getTime() : NaN;
+      l.data_fechado_ts = !isNaN(ref) ? ref : now;
       stamped = true;
+    }
+
+    if ((now - l.data_fechado_ts) >= 72 * 3600 * 1000) {
+      toMigrate.push(l);
     }
   }
 
@@ -1268,7 +1267,7 @@ async function autoMigrateLeadsFechados() {
         estado: l.estado || '',
       };
       clientes.push(novoCliente);
-      addHist('cliente', 'Cliente: ' + novoCliente.nome, 'Migrado automaticamente do Kanban (após 24h)');
+      addHist('cliente', 'Cliente: ' + novoCliente.nome, 'Migrado automaticamente do Kanban (após 72h)');
       changed = true;
     }
     leads = leads.filter(x => x.id !== l.id);
@@ -2650,7 +2649,7 @@ function renderCarteira() {
 
   const tbody = document.getElementById('carteira-tbody');
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="list-empty">Nenhum cliente encontrado. Leads "Fechado ✓" são migrados automaticamente após 1 dia.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="list-empty">Nenhum cliente encontrado. Leads "Fechado ✓" são migrados automaticamente após 3 dias.</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(c => {
